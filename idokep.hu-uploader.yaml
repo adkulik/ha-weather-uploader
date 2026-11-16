@@ -51,12 +51,32 @@ blueprint:
     az Időkép-állomásodhoz külön, máshol nem használt jelszót.
 
 
-    **Mértékegységek:** a szélsebességet és a széllökést a szenzor saját
-    mértékegysége alapján váltja át m/s-ra (km/h, m/s, mph és csomó
-    támogatott). A szélirány fokban vagy égtáj-rövidítésként is megadható. A
-    napsugárzást egész számra kerekített W/m²-ben küldi, mert az Időkép ennél
-    a mezőnél csak egész számot fogad el; lux mértékegységű szenzor értékét
-    közelítőleg W/m²-re váltja. Az UV-index mértékegység nélküli szám.
+    **Feltöltési formátum (csak Normál fióknál):** kétféle beküldés közül
+    választhatsz. Az **Időkép formátum** a megszokott `sendws.php` beküldés,
+    metrikus mértékegységekkel. A **Weather Underground formátum** az Időkép
+    `automata.idokep.hu` címére küld, a WU protokoll mezőneveivel és
+    mértékegységeivel (°F, inHg, mph, inch). Pro fióknál a beküldés mindig
+    Időkép formátumú. Hogy melyik adat melyik formátumban milyen néven megy
+    fel, azt az egyes mezők leírása mutatja.
+
+
+    **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja,
+    a WU formátum a **napi**, éjfél óta mért csapadékot. Az 1 órás csapadék
+    mindkettőben felmegy.
+
+
+    **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban**
+    fogadja globálsugárzásként. Időkép formátumban `napfeny` néven felmegy,
+    de az állomás oldalán globálsugárzásként nem jelenik meg.
+
+
+    **Mértékegységek:** a szenzorok saját mértékegységét a sablon kiolvassa,
+    és a választott formátumnak megfelelően váltja át (szél: km/h, m/s, mph
+    és csomó támogatott). A szélirány fokban vagy égtáj-rövidítésként is
+    megadható. Időkép formátumban a napsugárzás egész számra kerekített
+    W/m²-ben megy, mert ott csak egész számot fogad el az Időkép; lux
+    mértékegységű szenzor értékét a sablon közelítőleg W/m²-re váltja. Az
+    UV-index mértékegység nélküli szám.
 
 
     ### ❗ Fontos figyelmeztetés: Csak hiteles adatokat tölts fel!
@@ -94,7 +114,7 @@ blueprint:
     ---
 
 
-    **Verzió:** 2.6 · [Forráskód és változásnapló](https://github.com/adkulik/idokep.hu-uploader)
+    **Verzió:** 2.7 · [Forráskód és változásnapló](https://github.com/adkulik/idokep.hu-uploader)
   domain: automation
   source_url: https://raw.githubusercontent.com/adkulik/idokep.hu-uploader/refs/heads/main/idokep.hu-uploader.yaml
   homeassistant:
@@ -120,6 +140,25 @@ blueprint:
                   value: normal
                 - label: Pro
                   value: pro
+        feltoltesi_formatum:
+          name: Feltöltési formátum
+          description: >-
+            Csak Normál fióknál számít. Időkép formátum: a megszokott
+            `sendws.php` beküldés, 24 órás csapadékkal. Weather Underground
+            formátum: az Időkép `automata.idokep.hu` címére, a WU protokoll
+            mezőneveivel és mértékegységeivel (°F, inHg, mph, inch), napi
+            (éjfél óta mért) csapadékkal; a globálsugárzást csak ez fogadja.
+            Pro fióknál a beküldés mindig Időkép formátumú, ez a beállítás ott
+            nem hat.
+          default: idokep
+          selector:
+            select:
+              mode: list
+              options:
+                - label: Időkép formátum
+                  value: idokep
+                - label: Weather Underground formátum
+                  value: wu
         idokep_user:
           name: Felhasználónév
           description: Az Időkép állomásod azonosítója.
@@ -167,7 +206,9 @@ blueprint:
       input:
         temp_sensor:
           name: Hőmérséklet (Kötelező)
-          description: Kültéri hőmérséklet. Enélkül nem történik feltöltés.
+          description: >-
+            Kültéri hőmérséklet. Enélkül nem történik feltöltés. Időkép: `hom`
+            (°C), WU: `tempf` (°F).
           default: ""
           selector:
             entity:
@@ -175,6 +216,7 @@ blueprint:
               device_class: temperature
         humidity_sensor:
           name: Páratartalom (Opcionális)
+          description: Időkép `rh`, WU `humidity` néven megy, %-ban.
           default: ""
           selector:
             entity:
@@ -184,7 +226,8 @@ blueprint:
           name: Légnyomás (Opcionális)
           description: >-
             Lehetőleg a **tengerszintre korrigált** értéket add meg, ne a nyers
-            állomásnyomást — az Időkép ezt várja.
+            állomásnyomást — az Időkép ezt várja. Időkép: `p` (hPa), WU:
+            `baromin` (inHg).
           default: ""
           selector:
             entity:
@@ -194,7 +237,8 @@ blueprint:
           name: Beltéri hőmérséklet (Opcionális)
           description: >-
             Ha megadod, a beltéri hőmérséklet is felkerül. Ha üresen hagyod,
-            a paraméter egyszerűen kimarad a beküldésből.
+            a paraméter egyszerűen kimarad a beküldésből. Időkép: `inhom`
+            (°C), WU: `indoortempf` (°F).
           default: ""
           selector:
             entity:
@@ -212,7 +256,8 @@ blueprint:
             Fokban (0–360) **vagy** égtáj-rövidítésként megadott érték.
             Támogatott rövidítések: N, NNE, NE, ENE, E, ESE, SE, SSE, S, SSW,
             SW, WSW, W, WNW, NW, NNW, valamint a magyar É, ÉK, K, DK, D, DNY,
-            NY, ÉNY. A kis- és nagybetű nem számít.
+            NY, ÉNY. A kis- és nagybetű nem számít. Időkép: `szelirany`, WU:
+            `winddir`, fokban.
           default: ""
           selector:
             entity:
@@ -220,13 +265,17 @@ blueprint:
         wind_speed_sensor:
           name: Szélsebesség (Opcionális)
           description: >-
-            A mértékegységet a szenzorból olvassa ki és m/s-ra váltja.
+            A mértékegységet a szenzorból olvassa ki és átváltja. Időkép:
+            `szelero` (m/s), WU: `windspeedmph` (mph).
           default: ""
           selector:
             entity:
               domain: sensor
         wind_gust_sensor:
           name: Széllökés (Opcionális)
+          description: >-
+            A mértékegységet a szenzorból olvassa ki és átváltja. Időkép:
+            `szellokes` (m/s), WU: `windgustmph` (mph).
           default: ""
           selector:
             entity:
@@ -236,33 +285,48 @@ blueprint:
       name: Csapadék
       icon: mdi:weather-pouring
       description: >-
-        Az Időkép három csapadékértéket vár, mindhármat mm-ben. Ugyanezt a
-        hármat küldi a hivatalos Időkép feltöltő program is.
+        Időkép formátumban az 1 órás, a 24 órás és az összes csapadék megy fel
+        mm-ben (ugyanezt a hármat küldi a hivatalos Időkép feltöltő program
+        is). WU formátumban az 1 órás és a napi, éjfél óta mért csapadék megy
+        fel, inch-ben.
       collapsed: true
       input:
         rain_1h:
           name: 1 órás csapadék (Opcionális)
           description: >-
             Az elmúlt 1 óra csapadékösszege mm-ben (gördülő 1 órás ablak).
-            Az Időképre `csap1h` néven megy.
+            Mindkét formátumban felmegy. Időkép: `csap1h` (mm), WU: `rainin`
+            (inch).
           default: ""
           selector:
             entity:
               domain: sensor
         rain_24h:
-          name: 24 órás csapadék (Opcionális)
+          name: 24 órás csapadék (Opcionális, csak Időkép formátum)
           description: >-
             Az elmúlt 24 óra csapadékösszege mm-ben (gördülő 24 órás ablak,
-            nem az éjfél óta mért napi összeg). Az Időképre `csap` néven megy.
+            nem az éjfél óta mért napi összeg). Időkép: `csap` (mm). WU
+            formátumnál nem megy fel, ott a napi csapadék helyettesíti.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+        rain_daily:
+          name: Napi csapadék – éjfél óta (Opcionális, csak WU formátum)
+          description: >-
+            Az éjfél óta hullott csapadék mm-ben. WU: `dailyrainin` (inch).
+            Időkép formátumnál nem megy fel, ott a 24 órás csapadék
+            helyettesíti.
           default: ""
           selector:
             entity:
               domain: sensor
         rain_total:
-          name: Összes csapadék – számláló (Opcionális)
+          name: Összes csapadék – számláló (Opcionális, csak Időkép formátum)
           description: >-
             A csapadékmérő folyamatosan növekvő összesítő számlálója mm-ben
-            (nem napi és nem 24 órás érték). Az Időképre `csaptotal` néven megy.
+            (nem napi és nem 24 órás érték). Időkép: `csaptotal` (mm). WU
+            formátumnál nem megy fel.
           default: ""
           selector:
             entity:
@@ -276,15 +340,17 @@ blueprint:
         solar_radiation_sensor:
           name: Napsugárzás (Opcionális)
           description: >-
-            W/m² vagy lux. A luxot közelítőleg W/m²-re váltja. Az Időképre
-            `napfeny` néven, egész számra kerekítve megy.
+            W/m² vagy lux. A luxot közelítőleg W/m²-re váltja. Időkép:
+            `napfeny` (egész W/m²), de az Időkép ezt nem jeleníti meg
+            globálsugárzásként. WU: `solarradiation` (W/m²), ez jelenik meg
+            globálsugárzásként.
           default: ""
           selector:
             entity:
               domain: sensor
         uv_index_sensor:
           name: UV-index (Opcionális)
-          description: Mértékegység nélküli szám. Az Időképre `uv` néven megy.
+          description: Mértékegység nélküli szám. Időkép `uv`, WU `UV` néven megy.
           default: ""
           selector:
             entity:
@@ -295,6 +361,7 @@ max_exceeded: silent
 
 variables:
   fioktipus: !input idokep_fioktipus
+  formatum: !input feltoltesi_formatum
   user_name: !input idokep_user
   password: !input idokep_pass
   temp_sensor: !input temp_sensor
@@ -307,6 +374,7 @@ variables:
   r_1h: !input rain_1h
   r_24h: !input rain_24h
   r_total: !input rain_total
+  r_daily: !input rain_daily
   solar_sensor: !input solar_radiation_sensor
   uv_sensor: !input uv_index_sensor
 
@@ -410,4 +478,74 @@ actions:
           {%- set ns.url = ns.url ~ '&uv=' ~ szam(states(uv_sensor)) | trim -%}
         {%- endif -%}
 
-        {{ ns.url ~ '&tipus=HA_Uploader' }}
+        {#- Weather Underground formátum: csak Normál fióknál, ha ki van választva -#}
+        {%- if (fioktipus | string | lower) != 'pro' and (formatum | string | lower) == 'wu' -%}
+          {%- set mph_szorzo = {
+            'm/s': 2.2369363, 'km/h': 0.6213712, 'kph': 0.6213712,
+            'mph': 1.0, 'mi/h': 1.0, 'kn': 1.1507794, 'kt': 1.1507794
+          } -%}
+          {%- set w = namespace(url =
+            'https://automata.idokep.hu/weatherstation/updateweatherstation.php'
+            ~ '?ID=' ~ (user_name | string | urlencode)
+            ~ '&PASSWORD=' ~ (password | string | urlencode)
+            ~ '&dateutc=now') -%}
+          {#- Hőmérséklet: °F -#}
+          {%- for kulcs, ent in [('tempf', temp_sensor), ('indoortempf', indoor_sensor)] -%}
+            {%- if ent not in ['', none] and is_number(states(ent)) -%}
+              {%- set v = states(ent) | float(0) -%}
+              {%- set egyseg = (state_attr(ent, 'unit_of_measurement') or '°C') | lower | trim -%}
+              {%- set f = v if egyseg in ['°f', 'f'] else v * 9 / 5 + 32 -%}
+              {%- set w.url = w.url ~ '&' ~ kulcs ~ '=' ~ ('%.1f' | format(f)) -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {#- Páratartalom: % -#}
+          {%- if hum_sensor not in ['', none] and is_number(states(hum_sensor)) -%}
+            {%- set w.url = w.url ~ '&humidity=' ~ (states(hum_sensor) | float(0) | round(0) | int) -%}
+          {%- endif -%}
+          {#- Légnyomás: inHg -#}
+          {%- if press_sensor not in ['', none] and is_number(states(press_sensor)) -%}
+            {%- set v = states(press_sensor) | float(0) -%}
+            {%- set egyseg = (state_attr(press_sensor, 'unit_of_measurement') or 'hPa') | lower | trim -%}
+            {%- set inhg = {'inhg': 1.0, 'kpa': 0.2953006, 'mmhg': 0.0393701}.get(egyseg, 0.02953006) * v -%}
+            {%- set w.url = w.url ~ '&baromin=' ~ ('%.3f' | format(inhg)) -%}
+          {%- endif -%}
+          {#- Szélirány: fok -#}
+          {%- if wdir_sensor not in ['', none] -%}
+            {%- set nyers = states(wdir_sensor) -%}
+            {%- if is_number(nyers) -%}
+              {%- set w.url = w.url ~ '&winddir=' ~ ((nyers | float(0) % 360) | round(0) | int) -%}
+            {%- elif nyers is string and egtajak.get(nyers | lower | trim) is not none -%}
+              {%- set w.url = w.url ~ '&winddir=' ~ (egtajak[nyers | lower | trim] | round(0) | int) -%}
+            {%- endif -%}
+          {%- endif -%}
+          {#- Szélsebesség és széllökés: mph -#}
+          {%- for kulcs, ent in [('windspeedmph', wspeed_sensor), ('windgustmph', wgust_sensor)] -%}
+            {%- if ent not in ['', none] and is_number(states(ent)) -%}
+              {%- set egyseg = (state_attr(ent, 'unit_of_measurement') or 'km/h') | lower | trim -%}
+              {%- set mph = states(ent) | float(0) * mph_szorzo.get(egyseg, 0.6213712) -%}
+              {%- set w.url = w.url ~ '&' ~ kulcs ~ '=' ~ ('%.1f' | format(mph)) -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {#- Csapadék: inch (1 órás és éjfél óta) -#}
+          {%- for kulcs, ent in [('rainin', r_1h), ('dailyrainin', r_daily)] -%}
+            {%- if ent not in ['', none] and is_number(states(ent)) -%}
+              {%- set egyseg = (state_attr(ent, 'unit_of_measurement') or 'mm') | lower | trim -%}
+              {%- set inch = states(ent) | float(0) if egyseg in ['in', 'inch'] else states(ent) | float(0) / 25.4 -%}
+              {%- set w.url = w.url ~ '&' ~ kulcs ~ '=' ~ ('%.3f' | format(inch)) -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {#- Napsugárzás: W/m², a luxot közelítőleg W/m²-re váltva -#}
+          {%- if solar_sensor not in ['', none] and is_number(states(solar_sensor)) -%}
+            {%- set v = states(solar_sensor) | float(0) -%}
+            {%- set egyseg = (state_attr(solar_sensor, 'unit_of_measurement') or '') | lower | trim -%}
+            {%- set wm2 = (v / 126.7) if egyseg in ['lx', 'lux'] else v -%}
+            {%- set w.url = w.url ~ '&solarradiation=' ~ ('%.1f' | format(wm2)) -%}
+          {%- endif -%}
+          {#- UV-index -#}
+          {%- if uv_sensor not in ['', none] and is_number(states(uv_sensor)) -%}
+            {%- set w.url = w.url ~ '&UV=' ~ ('%.1f' | format(states(uv_sensor) | float(0))) -%}
+          {%- endif -%}
+          {{ w.url ~ '&softwaretype=HA_Uploader&action=updateraw' }}
+        {%- else -%}
+          {{ ns.url ~ '&tipus=HA_Uploader' }}
+        {%- endif -%}

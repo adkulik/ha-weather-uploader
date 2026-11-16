@@ -7,6 +7,7 @@ Ezzel a Home Assistant sablon-automatizmussal (angolul: Blueprint) pofonegyszer�
 Nincs többé bonyolult YAML kódolás, a sablon a háttérben automatikusan elvégzi a legnehezebb feladatokat:
 * Az adatok Időkép-kompatibilis formázását (tizedesvesszők, pontos kerekítések).
 * A szélsebesség és széllökés automatikus átváltását.
+* Normál fióknál kétféle feltöltési formátumot: a megszokott Időkép formátumot vagy a Weather Underground formátumot, amelyet az Időkép globálsugárzásként is megjelenít.
 * A nem elérhető (unavailable/unknown) vagy épp frissítő szenzorok intelligens elrejtését, így a feltöltés sosem akad meg hamis nullákkal.
 
 ---
@@ -85,6 +86,7 @@ A sablon-automatizmus importálásához kattints az alábbi gombra, ami varázs�
 2. Keresd meg a listában az *Időkép Automata Feltöltő (Univerzális)* sablont, és kattints az **Automatizmus létrehozása** gombra.
 3. Töltsd ki a megjelenő egyszerű grafikus felületet:
    * **Fióktípus:** Az Időképen kétféle fiók létezik, Normál és Pro. A legtöbb állomáshoz a Normál fiók megfelelő, Pro fiókra csak speciális esetekben van szükség. Ha a fiókodat az 1. lépésben linkelt haladó szintű regisztrációval hoztad létre, akkor Normál fiókod van. Az alapértelmezés a Normál.
+   * **Feltöltési formátum (csak Normál fióknál):** *Időkép formátum* (a megszokott beküldés, 24 órás csapadékkal) vagy *Weather Underground formátum* (az Időkép `automata.idokep.hu` címére, napi, éjfél óta mért csapadékkal; a napsugárzást csak ez jeleníti meg globálsugárzásként). Pro fióknál a beküldés mindig Időkép formátumú. Az alapértelmezés az Időkép formátum.
    * **Felhasználónév és Jelszó:** Add meg az Időkép állomásod hivatalos azonosítóit.
    * **Ütemezés:** Válaszd ki, milyen sűrűn küldjön adatot (percenként, 2, 5, 10 vagy 15 percenként). Az alapértelmezés 5 perc, ami a legtöbb állomásnak bőven elég.
    * **Szenzorok:** Válaszd ki a legördülő menükből az okosotthonod megfelelő entitásait. Csak a Hőmérséklet megadása kötelező, az összes többi meteorológiai adat (páratartalom, légnyomás, beltéri hőmérséklet, szél, csapadék, napsugárzás, UV-index) opcionális!
@@ -92,19 +94,38 @@ A sablon-automatizmus importálásához kattints az alábbi gombra, ami varázs�
 
 Kész is vagy! Az automatizmus innentől kezdve a háttérben, észrevétlenül, a választott gyakorisággal frissíti az adataidat az Időkép hálózatában.
 
-### 🌬️ Mértékegységek
+### 🌬️ Feltöltési formátumok és mértékegységek
 
-* **Szélsebesség és széllökés:** a sablon a szenzor saját mértékegységét olvassa ki, és automatikusan m/s-ra váltja (km/h, m/s, mph és csomó támogatott).
-* **Szélirány:** megadható fokban (0–360) vagy égtáj-rövidítésként, angolul (N, NNE, NE …) vagy magyarul (É, ÉK, K, DK, D, DNY, NY, ÉNY).
-* **Csapadék:** mm-ben megy fel. Az 1 órás (`csap1h`) és a 24 órás (`csap`) érték gördülő összeg, az összes csapadék (`csaptotal`) a csapadékmérő folyamatosan növekvő számlálója.
-* **Napsugárzás:** egész számra kerekített W/m²-ben megy fel (`napfeny`), mert az Időkép ennél a mezőnél csak egész számot fogad el. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
-* **UV-index:** mértékegység nélküli szám, átváltás nélkül megy fel (`uv`).
+A sablon a szenzorok saját mértékegységét kiolvassa, és a választott formátumnak megfelelően váltja át. A szélirány fokban (0–360) vagy égtáj-rövidítésként is megadható, angolul (N, NNE, NE …) vagy magyarul (É, ÉK, K, DK, D, DNY, NY, ÉNY).
+
+| Adat | Időkép formátum | Weather Underground formátum |
+|---|---|---|
+| Hőmérséklet | `hom` (°C) | `tempf` (°F) |
+| Páratartalom | `rh` (%) | `humidity` (%) |
+| Légnyomás | `p` (hPa) | `baromin` (inHg) |
+| Beltéri hőmérséklet | `inhom` (°C) | `indoortempf` (°F) |
+| Szélirány | `szelirany` (fok) | `winddir` (fok) |
+| Szélsebesség | `szelero` (m/s) | `windspeedmph` (mph) |
+| Széllökés | `szellokes` (m/s) | `windgustmph` (mph) |
+| 1 órás csapadék | `csap1h` (mm) | `rainin` (inch) |
+| 24 órás csapadék | `csap` (mm) | – |
+| Napi csapadék (éjfél óta) | – | `dailyrainin` (inch) |
+| Összes csapadék (számláló) | `csaptotal` (mm) | – |
+| Napsugárzás | `napfeny` (egész W/m²) | `solarradiation` (W/m²) |
+| UV-index | `uv` | `UV` |
+
+* **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja, a WU formátum a **napi**, éjfél óta mért csapadékot. Az 1 órás csapadék mindkettőben felmegy.
+* **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban** jeleníti meg globálsugárzásként. Időkép formátumban `napfeny` néven felmegy (egész számra kerekítve, mert ott csak egész számot fogad el), de az állomás oldalán globálsugárzásként nem jelenik meg. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
 
 ---
 
 ## 🔄 Frissítés
 
 Új verzió megjelenésekor a Home Assistantban a **Sablon-automatizmusok** listájában kattints a sablon melletti három pöttyre, és válaszd a **Sablon-automatizmus újraimportálása** lehetőséget (angol felületen: *Re-import blueprint*). A meglévő automatizmusod beállításai megmaradnak. Hogy épp melyik verzió fut nálad, azt a sablon leírásának alján látod.
+
+### Frissítés 2.6-ról 2.7-re
+
+Importáld újra a sablont a fent leírt módon. A `configuration.yaml`-hoz nem kell hozzányúlni, és ha semmit nem változtatsz, a beküldés ugyanúgy megy, mint eddig. A Weather Underground formátum kipróbálásához Normál fióknál nyisd meg az automatizmusodat, az **Időkép fiók** részben válaszd a **Weather Underground formátumot**, a **Csapadék** részben pedig add meg a **Napi csapadék – éjfél óta** szenzort.
 
 ### Frissítés 2.3-ról 2.5-re
 
@@ -150,6 +171,13 @@ Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik
 ---
 
 ## 📋 Változásnapló
+
+### 2.7 (2026-11-16)
+
+* Új **Feltöltési formátum** beállítás Normál fiókhoz: Időkép formátum vagy Weather Underground formátum (`automata.idokep.hu`, WU mezőnevek és mértékegységek).
+* A napsugárzást az Időkép csak a WU formátumban jeleníti meg globálsugárzásként.
+* Új, opcionális **Napi csapadék – éjfél óta** mező a WU formátumhoz.
+* Minden mező leírása megadja, melyik formátumban milyen néven és mértékegységben megy fel.
 
 ### 2.6 (2026-11-16)
 
