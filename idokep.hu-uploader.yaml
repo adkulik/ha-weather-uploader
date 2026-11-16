@@ -54,7 +54,8 @@ blueprint:
     **Mértékegységek:** a szélsebességet és a széllökést a szenzor saját
     mértékegysége alapján váltja át m/s-ra (km/h, m/s, mph és csomó
     támogatott). A szélirány fokban vagy égtáj-rövidítésként is megadható. A
-    napsugárzást W/m²-ben küldi; lux mértékegységű szenzor értékét
+    napsugárzást egész számra kerekített W/m²-ben küldi, mert az Időkép ennél
+    a mezőnél csak egész számot fogad el; lux mértékegységű szenzor értékét
     közelítőleg W/m²-re váltja. Az UV-index mértékegység nélküli szám.
 
 
@@ -93,7 +94,7 @@ blueprint:
     ---
 
 
-    **Verzió:** 2.5 · [Forráskód és változásnapló](https://github.com/adkulik/idokep.hu-uploader)
+    **Verzió:** 2.6 · [Forráskód és változásnapló](https://github.com/adkulik/idokep.hu-uploader)
   domain: automation
   source_url: https://raw.githubusercontent.com/adkulik/idokep.hu-uploader/refs/heads/main/idokep.hu-uploader.yaml
   homeassistant:
@@ -276,7 +277,7 @@ blueprint:
           name: Napsugárzás (Opcionális)
           description: >-
             W/m² vagy lux. A luxot közelítőleg W/m²-re váltja. Az Időképre
-            `napfeny` néven megy.
+            `napfeny` néven, egész számra kerekítve megy.
           default: ""
           selector:
             entity:
@@ -396,11 +397,12 @@ actions:
           {%- endif -%}
         {%- endfor -%}
 
-        {#- Napsugárzás: W/m², a luxot közelítőleg W/m²-re váltva -#}
+        {#- Napsugárzás: W/m², egész számra kerekítve (az Időkép itt csak egész számot fogad el), a luxot közelítőleg W/m²-re váltva -#}
         {%- if solar_sensor not in ['', none] and is_number(states(solar_sensor)) -%}
           {%- set v = states(solar_sensor) | float(0) -%}
           {%- set egyseg = (state_attr(solar_sensor, 'unit_of_measurement') or '') | lower | trim -%}
-          {%- set ns.url = ns.url ~ '&napfeny=' ~ szam((v / 126.7) if egyseg in ['lx', 'lux'] else v) | trim -%}
+          {%- set wm2 = (v / 126.7) if egyseg in ['lx', 'lux'] else v -%}
+          {%- set ns.url = ns.url ~ '&napfeny=' ~ (wm2 | round(0) | int) -%}
         {%- endif -%}
 
         {#- UV-index -#}

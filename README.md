@@ -97,7 +97,7 @@ Kész is vagy! Az automatizmus innentől kezdve a háttérben, észrevétlenül,
 * **Szélsebesség és széllökés:** a sablon a szenzor saját mértékegységét olvassa ki, és automatikusan m/s-ra váltja (km/h, m/s, mph és csomó támogatott).
 * **Szélirány:** megadható fokban (0–360) vagy égtáj-rövidítésként, angolul (N, NNE, NE …) vagy magyarul (É, ÉK, K, DK, D, DNY, NY, ÉNY).
 * **Csapadék:** mm-ben megy fel. Az 1 órás (`csap1h`) és a 24 órás (`csap`) érték gördülő összeg, az összes csapadék (`csaptotal`) a csapadékmérő folyamatosan növekvő számlálója.
-* **Napsugárzás:** W/m²-ben megy fel (`napfeny`). Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
+* **Napsugárzás:** egész számra kerekített W/m²-ben megy fel (`napfeny`), mert az Időkép ennél a mezőnél csak egész számot fogad el. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
 * **UV-index:** mértékegység nélküli szám, átváltás nélkül megy fel (`uv`).
 
 ---
@@ -150,6 +150,10 @@ Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik
 ---
 
 ## 📋 Változásnapló
+
+### 2.6 (2026-11-16)
+
+* A napsugárzás (`napfeny`) egész számra kerekítve megy fel, mert az Időkép ennél a mezőnél a tizedes értéket eldobja.
 
 ### 2.5 (2026-11-08)
 
