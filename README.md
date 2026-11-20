@@ -1,226 +1,155 @@
-# ⛅ Időkép Automata Feltöltő (Home Assistant sablon-automatizmus / Blueprint)
+🇬🇧 **English** | 🇭🇺 [Magyar](README.hu.md)
+
+# ⛅ Weather Station Uploader – Időkép, Metnet, Weather Underground (Home Assistant Blueprint)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/adkulik)
 
-Ezzel a Home Assistant sablon-automatizmussal (angolul: Blueprint) pofonegyszerűen, egy grafikus felületen keresztül bekötheted az okosotthonod meteorológiai szenzorait a magyar Időkép rendszerébe. 
+This Home Assistant blueprint sends your weather sensors to several weather networks at once, configured entirely from the UI:
 
-Nincs többé bonyolult YAML kódolás, a sablon a háttérben automatikusan elvégzi a legnehezebb feladatokat:
-* Az adatok Időkép-kompatibilis formázását (tizedesvesszők, pontos kerekítések).
-* A szélsebesség és széllökés automatikus átváltását.
-* Normál fióknál kétféle feltöltési formátumot: a megszokott Időkép formátumot vagy a Weather Underground formátumot, amelyet az Időkép globálsugárzásként is megjelenít.
-* A nem elérhető (unavailable/unknown) vagy épp frissítő szenzorok intelligens elrejtését, így a feltöltés sosem akad meg hamis nullákkal.
+* **Időkép** (Hungary's largest weather network; Normál and Pro accounts, native or Weather Underground format)
+* **Metnet** (Hungarian weather community)
+* **Weather Underground**
 
----
+Each site can be switched on separately, and you pick your sensors only once. The blueprint takes care of the rest:
 
-## 🔔 Ajánlott: értesítés az új verziókról (Blueprints Updater)
+* Every site gets the data in its own format and units (°C/°F, hPa/inHg, m/s/mph, mm/inch, decimal comma or point).
+* Enabled sites are uploaded in parallel. If one site is down, the others still get the data.
+* Unavailable/unknown sensors are left out of the upload, so no fake zeros are sent.
 
-A Home Assistant magától nem szól, ha egy sablon-automatizmusnak új verziója jelenik meg, ilyenkor kézzel kellene újraimportálni. Ezt veszi át a [Blueprints Updater](https://github.com/luuquangvu/blueprints-updater) közösségi integráció:
+> **Note:** the blueprint's UI (field names and descriptions) is in Hungarian, since most of its users upload to the Hungarian networks. The table below lists every field with its English meaning.
 
-* Minden telepített sablon-automatizmushoz frissítés-entitást hoz létre. Az Időkép Automata Feltöltő új verziója így ugyanott jelenik meg, ahol a Home Assistant többi frissítése, és egy kattintással telepíthető.
-* A sablon erre a repóra hivatkozik, ezért az integráció külön beállítás nélkül követi.
-* Frissítéskor az automatizmusod beállításai megmaradnak, a sablon korábbi változatairól pedig mentést tart.
-
-**Telepítés:** Home Assistant 2026.11-től a **Beállítások → Marketplace** oldalon (korábbi verziókban a HACS-ban) keresd meg a *Blueprints Updater*-t, telepítsd, majd indítsd újra a Home Assistantot. Ezután a **Beállítások → Eszközök és szolgáltatások → Integráció hozzáadása** gombbal add hozzá.
-
-**Tipp:** az automatikus frissítést hagyd kikapcsolva, és frissítés előtt nézd meg lent a Változásnaplót. Egy-egy új verzió (például a 2.0) a `configuration.yaml` módosítását is kérheti, ezt a frissítés nem végzi el helyetted.
+> The previous, Időkép-only **2.x blueprint** (`idokep.hu-uploader.yaml`) is still in this repository and keeps working, but new features only go into 3.x. See [Migrating from the 2.x Időkép uploader](#-migrating-from-the-2x-időkép-uploader).
 
 ---
 
-## ❗ Fontos figyelmeztetés: Csak hiteles adatokat tölts fel!
+## ❗ Please upload only reliable data
 
-Az Időkép térképeit és előrejelzéseit emberek százezrei használják nap mint nap. Kérjük, **csak és kizárólag akkor indíts adatfeltöltést, ha a szenzoraid elhelyezése megfelel a meteorológiai szabványoknak!** A rossz helyre tett műszerek (pl. napon lévő hőmérő, fal melletti szélmérő) hibás adatokat generálnak, amivel rontod a hálózat megbízhatóságát.
+These networks' maps and forecasts are used by a lot of people every day. **Only start uploading if your sensors are sited according to meteorological standards.** Badly placed instruments (a thermometer in the sun, an anemometer next to a wall) produce wrong data and hurt the whole network.
 
-### 📐 Műszerelhelyezési útmutató
-* **Hőmérő és páratartalom mérő:** 2 méter magasságban, árnyékos helyen (lehetőleg szabványos hőmérőházban vagy tányéros árnyékolóban) kell elhelyezni. Szigorúan tilos falhoz, betonhoz vagy olyan felülethez rögzíteni, ami hőt sugározhat magából!
-* **Szélmérő:** Szabad, nyílt területen, a talajszinttől számítva ideálisan 10 méter magasan kell lennie. Ha erre nincs mód, akkor a környező akadályok (háztető, fák) fölé kell nyúlnia legalább 2-3 méterrel, hogy a légáramlás akadálytalanul érje.
-* **Csapadékmérő:** Nyílt, vízszintes területen, a talajtól nagyjából 1-1,5 méter magasságban telepítve. Ügyelj rá, hogy épület, fa vagy tető ne takarja ki, és a szél ne tudjon belefújni faleveleket.
-* **Légnyomásmérő:** Beltéren is elhelyezhető, de figyelj arra, hogy a Home Assistant mindig **tengerszintre átszámított (relatív) légnyomásértéket** küldjön, ne pedig a szenzor által mért abszolút értéket.
+* **Temperature / humidity:** 2 m above ground, in the shade, in a proper radiation shield. Never mounted on a wall, concrete or any surface that radiates heat.
+* **Anemometer:** in open terrain, ideally 10 m high, or at least 2–3 m above nearby obstacles (roofs, trees).
+* **Rain gauge:** on open, level ground, about 1–1.5 m high, not shielded by buildings or trees.
+* **Barometer:** may be indoors, but always send **sea-level (relative) pressure**, not the raw station pressure.
 
 ---
 
-## ⚠️ 1. Lépés: Előfeltételek (Kötelező!)
+## ⚠️ Step 1: Prerequisites
 
-A sablon **Home Assistant 2024.10 vagy újabb** verziót igényel.
+Requires **Home Assistant 2024.10 or newer**.
 
-A feltöltéshez szükséged lesz egy saját, haladó szintű Időkép fiókra. Ha még nincs ilyened, **[kattints ide és regisztrálj egyet!](https://www.idokep.hu/regisztracio?szint=halado)** Az így létrehozott fiók Normál típusú (lásd a 3. lépésben a Fióktípust).
+An account on each site you want to upload to:
 
-Mivel a sablon-automatizmusok önmagukban nem tudnak közvetlenül a külső hálózatra kommunikálni, létre kell hoznunk egy apró, univerzális "hidat" a Home Assistant `configuration.yaml` fájljában.
+* **Időkép:** an advanced-level account, [register here](https://www.idokep.hu/regisztracio?szint=halado) (this creates a *Normál* account).
+* **Metnet:** your Station ID and key are on the station settings page, under *Weather Underground protokollal küldő állomás*.
+* **Weather Underground:** your Station ID and Station Key are on the *My Devices* page.
 
-1. Nyisd meg a Home Assistant `configuration.yaml` fájlját.
-2. Keresd meg a `rest_command:` blokkot (ha még nincs, hozd létre a fájl végén).
-3. Illeszd be az alábbi bejegyzést pontosan így, a behúzásokra figyelve:
+The blueprint sends data through Home Assistant's built-in `rest_command` integration, which needs one small entry in `configuration.yaml`:
 
 ```yaml
 rest_command:
-  idokep_get:
+  weather_upload:
     url: "{{ url }}"
     method: get
     headers:
-      User-Agent: "IdokepAutomata/500 (Windows)"
+      User-Agent: "{{ user_agent | default('HA-Weather-Uploader') }}"
     timeout: 15
 ```
 
-> **Mit csinál ez a blokk?** Létrehoz egy `rest_command.idokep_get` műveletet, amellyel a sablon a Home Assistant beépített HTTP-kliensén keresztül küldi el az adatokat, külön program futtatása nélkül. A `User-Agent` fejléc igazolja, hogy Időkép Feltöltőt használsz.
+Save the file and **restart Home Assistant**.
 
-> **Hibakezelés:** ha az Időkép hibakóddal (4xx/5xx) válaszol, vagy nem válaszol időben, a Home Assistant ezt a rendszernaplóba írja. A válasz szövegét a sablon nem ellenőrzi.
+> **What does this do?** It creates a generic `rest_command.weather_upload` action. The blueprint passes the URL and the `User-Agent` header per site, so when a new site is added to the blueprint later, this entry doesn't need to change.
 
-> **Biztonsági megjegyzés:** a beküldés titkosított HTTPS-kapcsolaton megy, de a jelszó az URL része, és ha a beküldés hibára fut, a Home Assistant a teljes URL-t, benne az állomás jelszavával, kiírhatja a rendszernaplóba. Ez bekerülhet a diagnosztikai csomagokba és a biztonsági mentésekbe is, ezért az Időkép-állomásodhoz használj külön, máshol nem használt jelszót.
-
-4. Mentsd el a fájlt, majd **indítsd újra a Home Assistantot**.
+> **Security note:** passwords and keys are part of the URL, so if an upload fails, Home Assistant may write the full URL to the system log, which ends up in diagnostics and backups too. Use a separate password for each site that you don't use anywhere else. All three sites are uploaded over HTTPS.
 
 ---
 
-## 🚀 2. Lépés: Telepítés
+## 🚀 Step 2: Install
 
-A sablon-automatizmus importálásához kattints az alábbi gombra, ami varázsütésre megnyitja a saját Home Assistant rendszeredet az importáló ablakkal:
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/adkulik/ha-weather-uploader/refs/heads/main/weather-uploader.yaml)
 
-[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://raw.githubusercontent.com/adkulik/idokep.hu-uploader/refs/heads/main/idokep.hu-uploader.yaml)
-
-*(Ha a gomb valamiért nem működne, másold ki ezt a linket: `https://raw.githubusercontent.com/adkulik/idokep.hu-uploader/refs/heads/main/idokep.hu-uploader.yaml`, majd a Home Assistant **Sablon-automatizmusok** oldalán kattints a jobb alsó sarokban lévő **Sablon-automatizmus importálása** gombra. Illeszd be a linket, kattints az **Előnézet**, végül a **Sablon-automatizmus importálása** gombra!)*
+Or import this URL manually under **Settings → Automations & scenes → Blueprints → Import blueprint**:
+`https://raw.githubusercontent.com/adkulik/ha-weather-uploader/refs/heads/main/weather-uploader.yaml`
 
 ---
 
-## ⚙️ 3. Lépés: Beállítás a felületen
+## ⚙️ Step 3: Configure
 
-1. Menj a **Beállítások -> Automatizmusok és jelenetek -> Sablon-automatizmusok** oldalra (angol felületen: *Blueprints*).
-2. Keresd meg a listában az *Időkép Automata Feltöltő (Univerzális)* sablont, és kattints az **Automatizmus létrehozása** gombra.
-3. Töltsd ki a megjelenő egyszerű grafikus felületet:
-   * **Fióktípus:** Az Időképen kétféle fiók létezik, Normál és Pro. A legtöbb állomáshoz a Normál fiók megfelelő, Pro fiókra csak speciális esetekben van szükség. Ha a fiókodat az 1. lépésben linkelt haladó szintű regisztrációval hoztad létre, akkor Normál fiókod van. Az alapértelmezés a Normál.
-   * **Feltöltési formátum (csak Normál fióknál):** *Időkép formátum* (a megszokott beküldés, 24 órás csapadékkal) vagy *Weather Underground formátum* (az Időkép `automata.idokep.hu` címére, napi, éjfél óta mért csapadékkal; a napsugárzást csak ez jeleníti meg globálsugárzásként). Pro fióknál a beküldés mindig Időkép formátumú. Az alapértelmezés az Időkép formátum.
-   * **Felhasználónév és Jelszó:** Add meg az Időkép állomásod hivatalos azonosítóit.
-   * **Ütemezés:** Válaszd ki, milyen sűrűn küldjön adatot (percenként, 2, 5, 10 vagy 15 percenként). Az alapértelmezés 5 perc, ami a legtöbb állomásnak bőven elég.
-   * **Szenzorok:** Válaszd ki a legördülő menükből az okosotthonod megfelelő entitásait. Csak a Hőmérséklet megadása kötelező, az összes többi meteorológiai adat (páratartalom, légnyomás, beltéri hőmérséklet, szél, csapadék, napsugárzás, UV-index) opcionális!
-4. Mentsd el az automatizmust.
+Create an automation from the *Időjárás-állomás Feltöltő (Időkép, Metnet, Wunderground)* blueprint:
 
-Kész is vagy! Az automatizmus innentől kezdve a háttérben, észrevétlenül, a választott gyakorisággal frissíti az adataidat az Időkép hálózatában.
+* **Időkép / Metnet / Weather Underground:** switch on (with the *Feltöltés a …* toggle) the sites you want and fill in their credentials. Disabled or incomplete sites are skipped.
+  * *Időkép – Fióktípus (account type):* Normál or Pro.
+  * *Időkép – Feltöltési formátum (upload format, Normál only):* Időkép format (24-hour rain) or Weather Underground format (daily rain; only this one shows solar radiation as global radiation on Időkép).
+* **Ütemezés (schedule):** every 1, 2, 5, 10 or 15 minutes (default 5), shared by all sites.
+* **Sensors:** only temperature is required; everything else is optional.
 
-### 🌬️ Feltöltési formátumok és mértékegységek
+### Formats and units
 
-A sablon a szenzorok saját mértékegységét kiolvassa, és a választott formátumnak megfelelően váltja át. A szélirány fokban (0–360) vagy égtáj-rövidítésként is megadható, angolul (N, NNE, NE …) vagy magyarul (É, ÉK, K, DK, D, DNY, NY, ÉNY).
+Metnet and Weather Underground always use the Weather Underground (WU) protocol; Időkép can use either. Units are read from each sensor and converted. Wind direction can be degrees (0–360) or a compass point in English (N, NNE …) or Hungarian (É, ÉK, K, DK, D, DNY, NY, ÉNY).
 
-| Adat | Időkép formátum | Weather Underground formátum |
+| Data (Hungarian field) | Időkép format | WU format (Metnet, Weather Underground, Időkép WU) |
 |---|---|---|
-| Hőmérséklet | `hom` (°C) | `tempf` (°F) |
-| Páratartalom | `rh` (%) | `humidity` (%) |
-| Légnyomás | `p` (hPa) | `baromin` (inHg) |
-| Beltéri hőmérséklet | `inhom` (°C) | `indoortempf` (°F) |
-| Szélirány | `szelirany` (fok) | `winddir` (fok) |
-| Szélsebesség | `szelero` (m/s) | `windspeedmph` (mph) |
-| Széllökés | `szellokes` (m/s) | `windgustmph` (mph) |
-| 1 órás csapadék | `csap1h` (mm) | `rainin` (inch) |
-| 24 órás csapadék | `csap` (mm) | – |
-| Napi csapadék (éjfél óta) | – | `dailyrainin` (inch) |
-| Összes csapadék (számláló) | `csaptotal` (mm) | – |
-| Napsugárzás | `napfeny` (egész W/m²) | `solarradiation` (W/m²) |
-| UV-index | `uv` | `UV` |
+| Temperature (Hőmérséklet) | `hom` (°C) | `tempf` (°F) |
+| Humidity (Páratartalom) | `rh` (%) | `humidity` (%) |
+| Dew point (calculated) | – | `dewptf` (°F) |
+| Pressure (Légnyomás) | `p` (hPa) | `baromin` (inHg) |
+| Indoor temperature (Beltéri hőmérséklet) | `inhom` (°C) | `indoortempf` (°F) |
+| Wind direction (Szélirány) | `szelirany` (°) | `winddir` (°) |
+| Wind speed (Szélsebesség) | `szelero` (m/s) | `windspeedmph` (mph) |
+| Wind gust (Széllökés) | `szellokes` (m/s) | `windgustmph` (mph) |
+| 1-hour rain (1 órás csapadék) | `csap1h` (mm) | `rainin` (in) |
+| 24-hour rain (24 órás csapadék) | `csap` (mm) | – |
+| Daily rain since midnight (Napi csapadék – éjfél óta) | – | `dailyrainin` (in) |
+| Rain counter (Összes csapadék) | `csaptotal` (mm) | – |
+| Solar radiation (Napsugárzás) | `napfeny` (integer W/m²) | `solarradiation` (W/m²) |
+| UV index (UV-index) | `uv` | `UV` |
 
-* **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja, a WU formátum a **napi**, éjfél óta mért csapadékot. Az 1 órás csapadék mindkettőben felmegy.
-* **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban** jeleníti meg globálsugárzásként. Időkép formátumban `napfeny` néven felmegy (egész számra kerekítve, mert ott csak egész számot fogad el), de az állomás oldalán globálsugárzásként nem jelenik meg. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
-
----
-
-## 🔄 Frissítés
-
-Új verzió megjelenésekor a Home Assistantban a **Sablon-automatizmusok** listájában kattints a sablon melletti három pöttyre, és válaszd a **Sablon-automatizmus újraimportálása** lehetőséget (angol felületen: *Re-import blueprint*). A meglévő automatizmusod beállításai megmaradnak. Hogy épp melyik verzió fut nálad, azt a sablon leírásának alján látod.
-
-### Frissítés 2.6-ról 2.7-re
-
-Importáld újra a sablont a fent leírt módon. A `configuration.yaml`-hoz nem kell hozzányúlni, és ha semmit nem változtatsz, a beküldés ugyanúgy megy, mint eddig. A Weather Underground formátum kipróbálásához Normál fióknál nyisd meg az automatizmusodat, az **Időkép fiók** részben válaszd a **Weather Underground formátumot**, a **Csapadék** részben pedig add meg a **Napi csapadék – éjfél óta** szenzort.
-
-### Frissítés 2.3-ról 2.5-re
-
-Importáld újra a sablont a fent leírt módon, majd nyisd meg az automatizmusodat, és a **Csapadék** részben a mezők leírása alapján ellenőrizd a csapadékszenzorokat.
-
-### Frissítés 2.2-ről 2.3-ra
-
-Importáld újra a sablont a fent leírt módon. Sem a `configuration.yaml`-hoz, sem az automatizmusod beállításaihoz nem kell hozzányúlni.
-
-### Frissítés 2.1-ről 2.2-re
-
-Importáld újra a sablont a fent leírt módon. A `configuration.yaml`-hoz nem kell hozzányúlni. A napsugárzás és az UV-index beküldéséhez nyisd meg az automatizmusodat, és a **Napsugárzás és UV** részben válaszd ki a szenzoraidat. Ha üresen hagyod őket, minden úgy működik, mint eddig.
-
-### Frissítés 2.0-ról 2.1-re
-
-Importáld újra a sablont a fent leírt módon. A `configuration.yaml`-hoz nem kell hozzányúlni.
-
-A 2.0 és a korábbi verziók mindig a Pro fiókok címére (`pro.idokep.hu`) küldtek, a 2.1 alapértelmezése viszont a Normál fiók. Ha Pro fiókod van, az újraimportálás után nyisd meg az automatizmusodat, és az **Időkép fiók** részben a **Fióktípusnál** válaszd a **Pro**-t. Normál fiók esetén nincs teendőd.
-
-### Frissítés 1.x-ről 2.0-ra
-
-A 2.0 a `shell_command` és a curl helyett a Home Assistant beépített `rest_command` integrációját használja, ezért egyszer a `configuration.yaml`-hoz is hozzá kell nyúlnod. Ebben a sorrendben haladj, így a feltöltés legfeljebb az újraindítások idejére áll le:
-
-1. Vedd fel a `configuration.yaml`-ba a fenti, 1. lépésben látható `rest_command` blokkot. A régi `shell_command.idokep_get` sort egyelőre hagyd meg.
-2. Indítsd újra a Home Assistantot.
-3. Importáld újra a sablont a fent leírt módon.
-4. Töröld a `configuration.yaml`-ból a régi `shell_command.idokep_get` sort, majd indítsd újra a Home Assistantot, vagy töltsd újra a shell parancsokat.
-
-Az automatizmusod beállításait nem kell módosítani.
-
-Ha maradnál a curl-os változatnál, az 1.0 továbbra is importálható erről a címről: `https://raw.githubusercontent.com/adkulik/idokep.hu-uploader/refs/tags/v1.0/idokep.hu-uploader.yaml`
+If you upload to Metnet or Weather Underground, set the *daily rain since midnight* sensor. Lux sensors are approximately converted to W/m².
 
 ---
 
-## ☕ Támogatás
+## 🔁 Migrating from the 2.x Időkép uploader
 
-A sablon ingyenes, és az is marad. Ha hasznosnak találod, egy kávéval támogathatod a további fejlesztést:
+3.0 is a new blueprint, so your old automation keeps running until you turn it off:
+
+1. Add the `rest_command.weather_upload` entry from Step 1. Keep the old `idokep_get` entry for now.
+2. Restart Home Assistant.
+3. Import the 3.0 blueprint and create a new automation from it with the same Időkép credentials and sensors.
+4. Disable (or delete) the old 2.x automation.
+5. Once nothing uses it, remove the old `idokep_get` entry and restart Home Assistant.
+
+---
+
+## 🔔 Recommended: update notifications (Blueprints Updater)
+
+Home Assistant doesn't tell you when a blueprint has a new version. The [Blueprints Updater](https://github.com/luuquangvu/blueprints-updater) integration adds an update entity for each installed blueprint; it follows this repository automatically. Keep auto-update off and read the changelog first, since a new version may need a `configuration.yaml` change.
+
+---
+
+## ☕ Support
+
+This blueprint is free and will stay free. If you find it useful, you can support further development:
 
 <a href="https://buymeacoffee.com/adkulik"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" height="50"></a>
 
-Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik) is elérhető.
+Recurring support is available through [GitHub Sponsors](https://github.com/sponsors/adkulik).
 
 ---
 
-## 📋 Változásnapló
+## 📋 Changelog
 
-### 2.7 (2026-11-16)
+The full changelog, including the 1.x–2.x Időkép uploader history, is in the [Hungarian README](README.hu.md#-változásnapló).
 
-* Új **Feltöltési formátum** beállítás Normál fiókhoz: Időkép formátum vagy Weather Underground formátum (`automata.idokep.hu`, WU mezőnevek és mértékegységek).
-* A napsugárzást az Időkép csak a WU formátumban jeleníti meg globálsugárzásként.
-* Új, opcionális **Napi csapadék – éjfél óta** mező a WU formátumhoz.
-* Minden mező leírása megadja, melyik formátumban milyen néven és mértékegységben megy fel.
+### 3.0 (2026-11-20) – Weather Station Uploader
 
-### 2.6 (2026-11-16)
+New blueprint (`weather-uploader.yaml`); the repository is renamed to `ha-weather-uploader`.
 
-* A napsugárzás (`napfeny`) egész számra kerekítve megy fel, mert az Időkép ennél a mezőnél a tizedes értéket eldobja.
+* Uploads to **Időkép**, **Metnet** and **Weather Underground** at once, each switchable.
+* Sites are uploaded in parallel; one failing site doesn't stop the others.
+* New generic `rest_command.weather_upload` (the blueprint sets the `User-Agent` per site), so new sites need no `configuration.yaml` change.
+* The Weather Underground measurement part is built once and shared by Metnet, Weather Underground and Időkép's WU format.
+* All three sites, Metnet included, are uploaded over HTTPS.
+* In WU format the dew point (`dewptf`) is calculated from temperature and humidity.
 
-### 2.5 (2026-11-08)
+### 2.8 (2026-11-20)
 
-* Csapadékfeltöltés, UV- és fényadatok optimalizálása.
-
-### 2.3 (2026-11-07)
-
-* A beküldés titkosított HTTPS-kapcsolaton megy (`https://idokep.hu`, illetve `https://pro.idokep.hu`), így a jelszó és a mérési adatok nem utaznak titkosítatlanul a hálózaton.
-* A frissítéshez elég újraimportálni a sablont: a `configuration.yaml` és az automatizmus beállításai változatlanok.
-
-### 2.2 (2026-11-07)
-
-* Új, opcionális **Napsugárzás és UV** szekció: napsugárzás (`solarradiation`, W/m²) és UV-index (`UV`) beküldése.
-* Lux mértékegységű fényerő-szenzor értékét a sablon közelítőleg W/m²-re váltja.
-* Ha a két új mezőt üresen hagyod, a beküldés változatlan.
-
-### 2.1 (2026-11-01)
-
-* Új beállítás az **Időkép fiók** szekcióban: **Fióktípus** (Normál vagy Pro). Normál fióknál az adatok az `idokep.hu`, Pro fióknál a `pro.idokep.hu` címre mennek. Az alapértelmezés a Normál.
-* A 2.0 és a korábbi verziók mindig a `pro.idokep.hu` címre küldtek. Ha Pro fiókod van, a frissítés után a Fióktípusnál válaszd a Pro-t. Lásd fent a *Frissítés 2.0-ról 2.1-re* részt.
-* A beküldés típusjelölése (`tipus`) `egyeb` helyett `HA_Uploader`.
-
-### 2.0 (2026-10-31)
-
-**Törő változás:** a frissítéshez a `configuration.yaml`-ba új bejegyzés kell. Lásd fent a *Frissítés 1.x-ről 2.0-ra* részt.
-
-* A beküldés a Home Assistant beépített `rest_command` integrációjával történik a `shell_command` és a curl helyett. Nem indul külön folyamat minden beküldésnél, és megszűnt a `shell_command` átirányításos csapdája.
-* A 4xx/5xx HTTP-hibákat a Home Assistant figyelmeztetésként naplózza. Az 1.0 curl-os beállítása ezeket csendben elnyelte.
-* Ismert korlát: az Időkép válasza nem UTF-8 kódolású, és a `rest_command` ezt nem tudja szövegként beolvasni. Ezért a sablon a válasz szövegét nem ellenőrzi, így például a hibás jelszót sem ismeri fel.
-
-### 1.0 (2026-10-31)
-
-Első számozott kiadás.
-
-* Grafikus beállítófelület öt összecsukható szekcióval: Időkép fiók, Ütemezés, Hőmérséklet és Páratartalom, Szél, Csapadék.
-* Választható feltöltési gyakoriság: percenként, 2, 5, 10 vagy 15 percenként (alapértelmezés: 5 perc).
-* Beküldhető adatok: kültéri hőmérséklet, páratartalom, tengerszintre korrigált légnyomás, beltéri hőmérséklet, szélirány, szélsebesség, széllökés, valamint 10 perces, 1 órás és napi csapadék.
-* A szélsebesség és a széllökés automatikus átváltása m/s-ra a szenzor mértékegysége alapján (km/h, m/s, mph, csomó).
-* Szélirány fokban vagy angol, illetve magyar égtáj-rövidítéssel.
-* A nem elérhető vagy nem számértékű szenzorok kimaradnak a beküldésből, így nem kerülnek fel hamis nullák.
-* Kitöltetlen fiókadatok vagy hőmérséklet-szenzor esetén nem indul feltöltés.
-* Műszerelhelyezési útmutató és biztonsági tudnivalók közvetlenül a beállítófelületen.
+* The 2.x blueprint's description points to 3.0. Uploads are unchanged.

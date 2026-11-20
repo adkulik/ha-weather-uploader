@@ -5,6 +5,13 @@ blueprint:
     Assistant beépített `rest_command` integrációjával.
 
 
+    **Új: 3.0 – Időjárás-állomás Feltöltő.** Megjelent az utód, amely
+    egyszerre tölt fel az Időképre, a Metnetre és a Weather Undergroundra:
+    [ha-weather-uploader](https://github.com/adkulik/ha-weather-uploader).
+    Ez a 2.x sablon továbbra is működik, de új funkciót már csak a 3.x kap.
+    Az átállás leírását a README-ben találod.
+
+
     **Előfeltétel:** a `rest_command.idokep_get` parancsnak léteznie kell a
     `configuration.yaml` fájlban. A helyes forma:
 
@@ -114,9 +121,9 @@ blueprint:
     ---
 
 
-    **Verzió:** 2.7 · [Forráskód és változásnapló](https://github.com/adkulik/idokep.hu-uploader)
+    **Verzió:** 2.8 · [Forráskód és változásnapló](https://github.com/adkulik/ha-weather-uploader)
   domain: automation
-  source_url: https://raw.githubusercontent.com/adkulik/idokep.hu-uploader/refs/heads/main/idokep.hu-uploader.yaml
+  source_url: https://raw.githubusercontent.com/adkulik/ha-weather-uploader/refs/heads/main/idokep.hu-uploader.yaml
   homeassistant:
     min_version: 2024.10.0
   input:
