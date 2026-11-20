@@ -62,7 +62,7 @@ rest_command:
 
 > **Mit csinál ez a blokk?** Létrehoz egy általános `rest_command.weather_upload` műveletet. A sablon minden oldalnak ezen keresztül küld, a címet és a `User-Agent` fejlécet oldalanként maga adja át. Ha később új oldal kerül a sablonba, ezt a blokkot nem kell módosítani.
 
-> **Biztonsági megjegyzés:** a jelszavak és kulcsok az URL részei, ezért ha egy beküldés hibára fut, a Home Assistant a teljes URL-t kiírhatja a rendszernaplóba. Ez bekerülhet a diagnosztikai csomagokba és a biztonsági mentésekbe is, ezért minden oldalhoz használj külön, máshol nem használt jelszót. A beküldés mindhárom oldal felé HTTPS-en megy (a Metnetnél HTTP is választható).
+> **Biztonsági megjegyzés:** a jelszavak és kulcsok az URL részei, ezért ha egy beküldés hibára fut, a Home Assistant a teljes URL-t kiírhatja a rendszernaplóba. Ez bekerülhet a diagnosztikai csomagokba és a biztonsági mentésekbe is, ezért minden oldalhoz használj külön, máshol nem használt jelszót. A beküldés mindhárom oldal felé titkosított HTTPS-kapcsolaton megy.
 
 ---
 
@@ -82,7 +82,6 @@ rest_command:
    * **Időkép / Metnet / Weather Underground:** kapcsold be (a „Feltöltés a …” kapcsolóval) azokat az oldalakat, ahová fel szeretnél tölteni, és add meg a hozzájuk tartozó azonosítókat. A kikapcsolt vagy kitöltetlen oldalra nem megy adat.
      * *Időkép – Fióktípus:* Normál vagy Pro. Ha a fiókodat a haladó szintű regisztrációval hoztad létre, Normál fiókod van.
      * *Időkép – Feltöltési formátum (csak Normál fióknál):* Időkép formátum (a megszokott beküldés, 24 órás csapadékkal) vagy Weather Underground formátum (napi csapadékkal; a napsugárzást csak ez jeleníti meg globálsugárzásként).
-     * *Metnet – Kapcsolat:* HTTPS (alapértelmezés) vagy HTTP.
    * **Ütemezés:** percenként, 2, 5, 10 vagy 15 percenként (alapértelmezés: 5 perc). Minden bekapcsolt oldalra ugyanezzel az ütemmel megy.
    * **Szenzorok:** csak a Hőmérséklet kötelező, minden más (páratartalom, légnyomás, beltéri hőmérséklet, szél, csapadék, napsugárzás, UV-index) opcionális.
 4. Mentsd el az automatizmust.
@@ -157,7 +156,7 @@ Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik
 * A bekapcsolt oldalak párhuzamosan kapják az adatot; egy oldal hibája nem állítja meg a többit.
 * Új, általános `rest_command.weather_upload` parancs (a `User-Agent` fejlécet oldalanként a sablon adja át). Új oldalhoz nem kell a `configuration.yaml`-hoz nyúlni.
 * A Weather Underground formátumú mérési részt a sablon egyszer állítja össze, és ezt kapja a Metnet, a Weather Underground és az Időkép WU formátuma.
-* Metnet: HTTPS kapcsolat (alapértelmezés), HTTP is választható.
+* Mindhárom oldal felé titkosított HTTPS-kapcsolaton megy a beküldés, a Metnet felé is.
 * WU formátumban a harmatpontot (`dewptf`) a sablon a hőmérsékletből és a páratartalomból számolja.
 
 ### 2.8 (2026-11-20)

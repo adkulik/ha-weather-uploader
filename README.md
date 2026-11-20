@@ -59,7 +59,7 @@ Save the file and **restart Home Assistant**.
 
 > **What does this do?** It creates a generic `rest_command.weather_upload` action. The blueprint passes the URL and the `User-Agent` header per site, so when a new site is added to the blueprint later, this entry doesn't need to change.
 
-> **Security note:** passwords and keys are part of the URL, so if an upload fails, Home Assistant may write the full URL to the system log, which ends up in diagnostics and backups too. Use a separate password for each site that you don't use anywhere else. All three sites are uploaded over HTTPS (HTTP is optional for Metnet).
+> **Security note:** passwords and keys are part of the URL, so if an upload fails, Home Assistant may write the full URL to the system log, which ends up in diagnostics and backups too. Use a separate password for each site that you don't use anywhere else. All three sites are uploaded over HTTPS.
 
 ---
 
@@ -79,7 +79,6 @@ Create an automation from the *Időjárás-állomás Feltöltő (Időkép, Metne
 * **Időkép / Metnet / Weather Underground:** switch on (with the *Feltöltés a …* toggle) the sites you want and fill in their credentials. Disabled or incomplete sites are skipped.
   * *Időkép – Fióktípus (account type):* Normál or Pro.
   * *Időkép – Feltöltési formátum (upload format, Normál only):* Időkép format (24-hour rain) or Weather Underground format (daily rain; only this one shows solar radiation as global radiation on Időkép).
-  * *Metnet – Kapcsolat (connection):* HTTPS (default) or HTTP.
 * **Ütemezés (schedule):** every 1, 2, 5, 10 or 15 minutes (default 5), shared by all sites.
 * **Sensors:** only temperature is required; everything else is optional.
 
@@ -148,7 +147,7 @@ New blueprint (`weather-uploader.yaml`); the repository is renamed to `ha-weathe
 * Sites are uploaded in parallel; one failing site doesn't stop the others.
 * New generic `rest_command.weather_upload` (the blueprint sets the `User-Agent` per site), so new sites need no `configuration.yaml` change.
 * The Weather Underground measurement part is built once and shared by Metnet, Weather Underground and Időkép's WU format.
-* Metnet: HTTPS by default, HTTP optional.
+* All three sites, Metnet included, are uploaded over HTTPS.
 * In WU format the dew point (`dewptf`) is calculated from temperature and humidity.
 
 ### 2.8 (2026-11-20)
