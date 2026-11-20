@@ -1,0 +1,634 @@
+blueprint:
+  name: Időjárás-állomás Feltöltő (Időkép, Metnet, Wunderground)
+  description: >-
+    Beküldi az okosotthon meteorológiai adatait egyszerre több időjárási
+    hálózatba: **Időkép**, **Metnet** és **Weather Underground**. Minden
+    oldalt külön kapcsolhatsz be, a szenzorokat pedig csak egyszer kell
+    megadni.
+
+
+    **Előfeltétel:** a `rest_command.weather_upload` parancsnak léteznie kell a
+    `configuration.yaml` fájlban. A helyes forma:
+
+
+    ```yaml
+
+    rest_command:
+      weather_upload:
+        url: "{{ url }}"
+        method: get
+        headers:
+          User-Agent: "{{ user_agent | default('HA-Weather-Uploader') }}"
+        timeout: 15
+    ```
+
+
+    A blokk felvétele után indítsd újra a Home Assistantot.
+
+
+    **Frissítés a 2.x Időkép Feltöltőről:** a 3.0 új sablon-automatizmus, ezért
+    a régi automatizmusod addig változatlanul fut, amíg ki nem kapcsolod. Vedd
+    fel a fenti blokkot, indítsd újra a Home Assistantot, hozz létre egy új
+    automatizmust ebből a sablonból, majd kapcsold ki (vagy töröld) a régit.
+    A régi `rest_command.idokep_get` bejegyzés ezután törölhető.
+
+
+    **Működés:** a bekapcsolt oldalak egymással párhuzamosan kapják meg az
+    adatot. Ha az egyik oldal hibát ad vagy nem válaszol, a többire a
+    feltöltés ettől még megtörténik; a hibát a Home Assistant a
+    rendszernaplóba írja.
+
+
+    **Formátumok:** a Metnet és a Weather Underground mindig, az Időkép
+    választhatóan a Weather Underground (WU) protokollt használja, a WU
+    mezőneveivel és mértékegységeivel (°F, inHg, mph, inch). Az Időkép saját
+    formátuma (`sendws.php`) metrikus mértékegységeket használ. Hogy melyik
+    adat melyik formátumban milyen néven megy fel, azt az egyes mezők leírása
+    mutatja.
+
+
+    **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja,
+    a WU formátum a **napi**, éjfél óta mért csapadékot. Az 1 órás csapadék
+    mindkettőben felmegy.
+
+
+    **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban**
+    jeleníti meg globálsugárzásként.
+
+
+    **Biztonsági megjegyzés:** a jelszavak és kulcsok az URL részei, ezért
+    hiba esetén a Home Assistant a teljes URL-t kiírhatja a rendszernaplóba,
+    ami bekerül a diagnosztikai csomagokba és a biztonsági mentésekbe is.
+    Minden oldalhoz használj külön, máshol nem használt jelszót. Az Időkép és
+    a Weather Underground felé a beküldés titkosított HTTPS-kapcsolaton megy;
+    a Metnet a saját leírása szerint HTTP-n (80-as port) fogad, a Metnet
+    részben HTTPS-re válthatsz, ha a Metnet elfogadja.
+
+
+    ### ❗ Fontos figyelmeztetés: Csak hiteles adatokat tölts fel!
+
+
+    Ezeknek a hálózatoknak a térképeit és előrejelzéseit nagyon sokan
+    használják. Kérjük, **csak akkor indíts adatfeltöltést, ha a szenzoraid
+    elhelyezése megfelel a meteorológiai szabványoknak!**
+
+
+    * **Hőmérő és páratartalom mérő:** 2 méter magasan, árnyékban, szabványos
+    hőmérőházban vagy tányéros árnyékolóban; ne falhoz vagy hősugárzó
+    felülethez rögzítve.
+
+    * **Szélmérő:** szabad területen, ideálisan 10 méter magasan, vagy a
+    környező akadályok fölé legalább 2-3 méterrel kinyúlva.
+
+    * **Csapadékmérő:** nyílt, vízszintes helyen, 1-1,5 méter magasan, épület
+    és fák takarása nélkül.
+
+    * **Légnyomásmérő:** mindig a **tengerszintre átszámított (relatív)**
+    értéket küldd, ne a nyers állomásnyomást.
+
+
+    ---
+
+
+    **Verzió:** 3.0 · [Forráskód és változásnapló](https://github.com/adkulik/ha-weather-uploader)
+  domain: automation
+  source_url: https://raw.githubusercontent.com/adkulik/ha-weather-uploader/refs/heads/main/weather-uploader.yaml
+  homeassistant:
+    min_version: 2024.10.0
+  input:
+    idokep:
+      name: Időkép
+      icon: mdi:weather-partly-cloudy
+      collapsed: true
+      input:
+        idokep_enabled:
+          name: Feltöltés az Időképre
+          default: false
+          selector:
+            boolean:
+        idokep_fioktipus:
+          name: Fióktípus
+          description: >-
+            Az Időképen kétféle fiók létezik. Ha a fiókodat a haladó szintű
+            regisztrációval hoztad létre, Normál fiókod van. A Pro csak
+            speciális esetekben szükséges. Alapértelmezés a Normál.
+          default: normal
+          selector:
+            select:
+              mode: list
+              options:
+                - label: Normál
+                  value: normal
+                - label: Pro
+                  value: pro
+        feltoltesi_formatum:
+          name: Feltöltési formátum
+          description: >-
+            Csak Normál fióknál számít. Időkép formátum: a megszokott
+            `sendws.php` beküldés, 24 órás csapadékkal. Weather Underground
+            formátum: az Időkép `automata.idokep.hu` címére, a WU protokoll
+            mezőneveivel és mértékegységeivel, napi (éjfél óta mért)
+            csapadékkal; a globálsugárzást csak ez fogadja. Pro fióknál a
+            beküldés mindig Időkép formátumú.
+          default: idokep
+          selector:
+            select:
+              mode: list
+              options:
+                - label: Időkép formátum
+                  value: idokep
+                - label: Weather Underground formátum
+                  value: wu
+        idokep_user:
+          name: Felhasználónév
+          description: Az Időkép állomásod azonosítója.
+          default: ""
+          selector:
+            text:
+        idokep_pass:
+          name: Jelszó
+          description: Az Időkép állomásodhoz tartozó jelszó.
+          default: ""
+          selector:
+            text:
+              type: password
+
+    metnet:
+      name: Metnet
+      icon: mdi:weather-cloudy-arrow-right
+      collapsed: true
+      input:
+        metnet_enabled:
+          name: Feltöltés a Metnetre
+          default: false
+          selector:
+            boolean:
+        metnet_station_id:
+          name: Állomásazonosító (Station ID)
+          description: >-
+            A Metnet által kiadott állomásazonosító, a Metnet állomás-beállítási
+            oldalán a Weather Underground protokollnál látod (szám, pl. 1186).
+          default: ""
+          selector:
+            text:
+        metnet_key:
+          name: Kulcs (Station Key / Password)
+          description: A Metnet által kiadott állomáskulcs.
+          default: ""
+          selector:
+            text:
+              type: password
+        metnet_protocol:
+          name: Kapcsolat
+          description: >-
+            A Metnet leírása HTTP-t (80-as port) ad meg. Ha a HTTPS is
+            működik nálad, válaszd azt, mert akkor a kulcs titkosítva utazik.
+            Ha HTTPS mellett a feltöltés nem jelenik meg a Metneten, válts
+            vissza HTTP-re.
+          default: http
+          selector:
+            select:
+              mode: list
+              options:
+                - label: HTTP (a Metnet leírása szerint)
+                  value: http
+                - label: HTTPS (titkosított)
+                  value: https
+
+    wunderground:
+      name: Weather Underground
+      icon: mdi:earth
+      collapsed: true
+      input:
+        wu_enabled:
+          name: Feltöltés a Weather Undergroundra
+          default: false
+          selector:
+            boolean:
+        wu_station_id:
+          name: Station ID
+          description: A Weather Underground állomásazonosítód (pl. IBAG12).
+          default: ""
+          selector:
+            text:
+        wu_key:
+          name: Station Key
+          description: >-
+            Az állomáshoz tartozó kulcs (Station Key), a Weather Underground
+            fiókodban a *My Devices* oldalon találod.
+          default: ""
+          selector:
+            text:
+              type: password
+
+    utemezes:
+      name: Ütemezés
+      icon: mdi:timer-outline
+      collapsed: true
+      input:
+        feltoltes_gyakorisag:
+          name: Feltöltés gyakorisága
+          description: >-
+            Milyen sűrűn küldjön adatot. Minden bekapcsolt oldalra ugyanezzel
+            az ütemmel megy. 5 perc a legtöbb állomásnak bőven elég.
+          default: "/5"
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: Percenként
+                  value: "/1"
+                - label: 2 percenként
+                  value: "/2"
+                - label: 5 percenként
+                  value: "/5"
+                - label: 10 percenként
+                  value: "/10"
+                - label: 15 percenként
+                  value: "/15"
+
+    merok:
+      name: Hőmérséklet és Páratartalom
+      icon: mdi:thermometer
+      collapsed: true
+      input:
+        temp_sensor:
+          name: Hőmérséklet (Kötelező)
+          description: >-
+            Kültéri hőmérséklet. Enélkül nem történik feltöltés. Időkép: `hom`
+            (°C), WU formátum: `tempf` (°F).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+              device_class: temperature
+        humidity_sensor:
+          name: Páratartalom (Opcionális)
+          description: Időkép `rh`, WU formátum `humidity` néven megy, %-ban.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+              device_class: humidity
+        pressure_sensor:
+          name: Légnyomás (Opcionális)
+          description: >-
+            Lehetőleg a **tengerszintre korrigált** értéket add meg, ne a nyers
+            állomásnyomást. Időkép: `p` (hPa), WU formátum: `baromin` (inHg).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+              device_class: atmospheric_pressure
+        indoor_temp_sensor:
+          name: Beltéri hőmérséklet (Opcionális)
+          description: >-
+            Ha üresen hagyod, a paraméter kimarad a beküldésből. Időkép:
+            `inhom` (°C), WU formátum: `indoortempf` (°F).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+              device_class: temperature
+
+    szel:
+      name: Szél
+      icon: mdi:weather-windy
+      collapsed: true
+      input:
+        wind_dir_sensor:
+          name: Szélirány (Opcionális)
+          description: >-
+            Fokban (0–360) **vagy** égtáj-rövidítésként megadott érték
+            (N, NNE, NE … NNW, illetve É, ÉK, K, DK, D, DNY, NY, ÉNY). Időkép:
+            `szelirany`, WU formátum: `winddir`, fokban.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+        wind_speed_sensor:
+          name: Szélsebesség (Opcionális)
+          description: >-
+            A mértékegységet a szenzorból olvassa ki és átváltja (km/h, m/s,
+            mph, csomó). Időkép: `szelero` (m/s), WU formátum: `windspeedmph`
+            (mph).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+        wind_gust_sensor:
+          name: Széllökés (Opcionális)
+          description: >-
+            A mértékegységet a szenzorból olvassa ki és átváltja. Időkép:
+            `szellokes` (m/s), WU formátum: `windgustmph` (mph).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+    csapadek:
+      name: Csapadék
+      icon: mdi:weather-pouring
+      description: >-
+        Időkép formátumban az 1 órás, a 24 órás és az összes csapadék megy fel
+        mm-ben. WU formátumban (Metnet, Weather Underground, és az Időkép WU
+        formátuma) az 1 órás és a napi, éjfél óta mért csapadék megy fel,
+        inch-ben.
+      collapsed: true
+      input:
+        rain_1h:
+          name: 1 órás csapadék (Opcionális)
+          description: >-
+            Az elmúlt 1 óra csapadékösszege mm-ben (gördülő 1 órás ablak).
+            Mindkét formátumban felmegy. Időkép: `csap1h` (mm), WU formátum:
+            `rainin` (inch).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+        rain_24h:
+          name: 24 órás csapadék (Opcionális, csak Időkép formátum)
+          description: >-
+            Az elmúlt 24 óra csapadékösszege mm-ben (gördülő 24 órás ablak,
+            nem az éjfél óta mért napi összeg). Időkép: `csap` (mm).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+        rain_daily:
+          name: Napi csapadék – éjfél óta (Opcionális, WU formátum)
+          description: >-
+            Az éjfél óta hullott csapadék mm-ben. WU formátum: `dailyrainin`
+            (inch). A Metnet és a Weather Underground ezt használja napi
+            csapadékként.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+        rain_total:
+          name: Összes csapadék – számláló (Opcionális, csak Időkép formátum)
+          description: >-
+            A csapadékmérő folyamatosan növekvő összesítő számlálója mm-ben.
+            Időkép: `csaptotal` (mm).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+    napsugarzas:
+      name: Napsugárzás és UV
+      icon: mdi:white-balance-sunny
+      collapsed: true
+      input:
+        solar_radiation_sensor:
+          name: Napsugárzás (Opcionális)
+          description: >-
+            W/m² vagy lux; a luxot közelítőleg W/m²-re váltja. Időkép:
+            `napfeny` (egész W/m²), WU formátum: `solarradiation` (W/m²).
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+        uv_index_sensor:
+          name: UV-index (Opcionális)
+          description: Mértékegység nélküli szám. Időkép `uv`, WU formátum `UV`.
+          default: ""
+          selector:
+            entity:
+              domain: sensor
+
+mode: single
+max_exceeded: silent
+
+variables:
+  idokep_on: !input idokep_enabled
+  fioktipus: !input idokep_fioktipus
+  formatum: !input feltoltesi_formatum
+  idokep_user: !input idokep_user
+  idokep_pass: !input idokep_pass
+  metnet_on: !input metnet_enabled
+  metnet_id: !input metnet_station_id
+  metnet_key: !input metnet_key
+  metnet_proto: !input metnet_protocol
+  wu_on: !input wu_enabled
+  wu_id: !input wu_station_id
+  wu_key: !input wu_key
+  temp_sensor: !input temp_sensor
+  hum_sensor: !input humidity_sensor
+  press_sensor: !input pressure_sensor
+  indoor_sensor: !input indoor_temp_sensor
+  wdir_sensor: !input wind_dir_sensor
+  wspeed_sensor: !input wind_speed_sensor
+  wgust_sensor: !input wind_gust_sensor
+  r_1h: !input rain_1h
+  r_24h: !input rain_24h
+  r_total: !input rain_total
+  r_daily: !input rain_daily
+  solar_sensor: !input solar_radiation_sensor
+  uv_sensor: !input uv_index_sensor
+  # Melyik cél van bekapcsolva ÉS kitöltve
+  idokep_kesz: >-
+    {{ idokep_on | bool(false) and idokep_user not in ['', none]
+       and idokep_pass not in ['', none] }}
+  metnet_kesz: >-
+    {{ metnet_on | bool(false) and metnet_id not in ['', none]
+       and metnet_key not in ['', none] }}
+  wu_kesz: >-
+    {{ wu_on | bool(false) and wu_id not in ['', none]
+       and wu_key not in ['', none] }}
+
+triggers:
+  - trigger: time_pattern
+    minutes: !input feltoltes_gyakorisag
+
+conditions:
+  # Legalább egy cél legyen kész, és a hőmérséklet-szenzor adjon számot.
+  - condition: template
+    value_template: >-
+      {{ (idokep_kesz or metnet_kesz or wu_kesz)
+         and temp_sensor not in ['', none] and is_number(states(temp_sensor)) }}
+
+actions:
+  - variables:
+      # Szélirány fokban (vagy üres), egyszer kiszámolva mindkét formátumhoz
+      szelirany_fok: >-
+        {%- set egtajak = {
+          'n': 0.0, 'nne': 22.5, 'ne': 45.0, 'ene': 67.5,
+          'e': 90.0, 'ese': 112.5, 'se': 135.0, 'sse': 157.5,
+          's': 180.0, 'ssw': 202.5, 'sw': 225.0, 'wsw': 247.5,
+          'w': 270.0, 'wnw': 292.5, 'nw': 315.0, 'nnw': 337.5,
+          'é': 0.0, 'ék': 45.0, 'k': 90.0, 'dk': 135.0,
+          'd': 180.0, 'dny': 225.0, 'ny': 270.0, 'ény': 315.0
+        } -%}
+        {%- if wdir_sensor not in ['', none] -%}
+          {%- set nyers = states(wdir_sensor) -%}
+          {%- if is_number(nyers) -%}
+            {{ nyers | float(0) % 360 }}
+          {%- elif egtajak.get(nyers | lower | trim) is not none -%}
+            {{ egtajak[nyers | lower | trim] }}
+          {%- endif -%}
+        {%- endif -%}
+
+      # Napsugárzás W/m²-ben (vagy üres), a luxot közelítőleg átváltva
+      napsugarzas_wm2: >-
+        {%- if solar_sensor not in ['', none] and is_number(states(solar_sensor)) -%}
+          {%- set v = states(solar_sensor) | float(0) -%}
+          {%- set egyseg = (state_attr(solar_sensor, 'unit_of_measurement') or '') | lower | trim -%}
+          {{ (v / 126.7) if egyseg in ['lx', 'lux'] else v }}
+        {%- endif -%}
+
+      # Közös Weather Underground mérési rész (ID és jelszó nélkül).
+      # Ezt kapja a Metnet, a Weather Underground és az Időkép WU formátuma.
+      wu_adatok: >-
+        {%- set mph_szorzo = {
+          'm/s': 2.2369363, 'km/h': 0.6213712, 'kph': 0.6213712,
+          'mph': 1.0, 'mi/h': 1.0, 'kn': 1.1507794, 'kt': 1.1507794
+        } -%}
+        {%- set w = namespace(q = '&dateutc=now') -%}
+        {%- for kulcs, ent in [('tempf', temp_sensor), ('indoortempf', indoor_sensor)] -%}
+          {%- if ent not in ['', none] and is_number(states(ent)) -%}
+            {%- set v = states(ent) | float(0) -%}
+            {%- set egyseg = (state_attr(ent, 'unit_of_measurement') or '°C') | lower | trim -%}
+            {%- set f = v if egyseg in ['°f', 'f'] else v * 9 / 5 + 32 -%}
+            {%- set w.q = w.q ~ '&' ~ kulcs ~ '=' ~ ('%.1f' | format(f)) -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- if hum_sensor not in ['', none] and is_number(states(hum_sensor)) -%}
+          {%- set w.q = w.q ~ '&humidity=' ~ (states(hum_sensor) | float(0) | round(0) | int) -%}
+        {%- endif -%}
+        {%- if press_sensor not in ['', none] and is_number(states(press_sensor)) -%}
+          {%- set v = states(press_sensor) | float(0) -%}
+          {%- set egyseg = (state_attr(press_sensor, 'unit_of_measurement') or 'hPa') | lower | trim -%}
+          {%- set inhg = {'inhg': 1.0, 'kpa': 0.2953006, 'mmhg': 0.0393701}.get(egyseg, 0.02953006) * v -%}
+          {%- set w.q = w.q ~ '&baromin=' ~ ('%.3f' | format(inhg)) -%}
+        {%- endif -%}
+        {%- if szelirany_fok not in ['', none] -%}
+          {%- set w.q = w.q ~ '&winddir=' ~ (szelirany_fok | float(0) | round(0) | int) -%}
+        {%- endif -%}
+        {%- for kulcs, ent in [('windspeedmph', wspeed_sensor), ('windgustmph', wgust_sensor)] -%}
+          {%- if ent not in ['', none] and is_number(states(ent)) -%}
+            {%- set egyseg = (state_attr(ent, 'unit_of_measurement') or 'km/h') | lower | trim -%}
+            {%- set mph = states(ent) | float(0) * mph_szorzo.get(egyseg, 0.6213712) -%}
+            {%- set w.q = w.q ~ '&' ~ kulcs ~ '=' ~ ('%.1f' | format(mph)) -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- for kulcs, ent in [('rainin', r_1h), ('dailyrainin', r_daily)] -%}
+          {%- if ent not in ['', none] and is_number(states(ent)) -%}
+            {%- set egyseg = (state_attr(ent, 'unit_of_measurement') or 'mm') | lower | trim -%}
+            {%- set inch = states(ent) | float(0) if egyseg in ['in', 'inch'] else states(ent) | float(0) / 25.4 -%}
+            {%- set w.q = w.q ~ '&' ~ kulcs ~ '=' ~ ('%.3f' | format(inch)) -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- if napsugarzas_wm2 not in ['', none] -%}
+          {%- set w.q = w.q ~ '&solarradiation=' ~ ('%.1f' | format(napsugarzas_wm2 | float(0))) -%}
+        {%- endif -%}
+        {%- if uv_sensor not in ['', none] and is_number(states(uv_sensor)) -%}
+          {%- set w.q = w.q ~ '&UV=' ~ ('%.1f' | format(states(uv_sensor) | float(0))) -%}
+        {%- endif -%}
+        {{ w.q ~ '&softwaretype=HA_Uploader&action=updateraw' }}
+
+      # Időkép saját formátuma (sendws.php), metrikus egységekkel, tizedesvesszővel
+      idokep_sajat_url: >-
+        {%- set ms_szorzo = {
+          'm/s': 1.0, 'km/h': 0.2777778, 'kph': 0.2777778,
+          'mph': 0.44704, 'mi/h': 0.44704, 'kn': 0.5144444, 'kt': 0.5144444
+        } -%}
+        {%- macro szam(ertek) -%}
+          {{ '%.2f' | format(ertek | float(0)) | replace('.', ',') }}
+        {%- endmacro -%}
+        {%- set alap = 'https://pro.idokep.hu' if (fioktipus | string | lower) == 'pro' else 'https://idokep.hu' -%}
+        {%- set ns = namespace(url =
+          alap ~ '/sendws.php'
+          ~ '?user=' ~ (idokep_user | string | urlencode)
+          ~ '&pass=' ~ (idokep_pass | string | urlencode)
+          ~ '&ev=' ~ now().year
+          ~ '&ho=' ~ now().month
+          ~ '&nap=' ~ now().day
+          ~ '&ora=' ~ now().hour
+          ~ '&perc=' ~ now().minute
+          ~ '&mp=' ~ now().second) -%}
+        {%- for kulcs, ent in [
+              ('hom', temp_sensor),
+              ('rh', hum_sensor),
+              ('p', press_sensor),
+              ('inhom', indoor_sensor),
+              ('csap', r_24h),
+              ('csap1h', r_1h),
+              ('csaptotal', r_total)
+            ] -%}
+          {%- if ent not in ['', none] and is_number(states(ent)) -%}
+            {%- set ns.url = ns.url ~ '&' ~ kulcs ~ '=' ~ szam(states(ent)) | trim -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- if szelirany_fok not in ['', none] -%}
+          {%- set ns.url = ns.url ~ '&szelirany=' ~ szam(szelirany_fok) | trim -%}
+        {%- endif -%}
+        {%- for kulcs, ent in [('szelero', wspeed_sensor), ('szellokes', wgust_sensor)] -%}
+          {%- if ent not in ['', none] and is_number(states(ent)) -%}
+            {%- set egyseg = (state_attr(ent, 'unit_of_measurement') or 'km/h') | lower | trim -%}
+            {%- set szorzo = ms_szorzo.get(egyseg, 0.2777778) -%}
+            {%- set ns.url = ns.url ~ '&' ~ kulcs ~ '=' ~ szam(states(ent) | float(0) * szorzo) | trim -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- if napsugarzas_wm2 not in ['', none] -%}
+          {%- set ns.url = ns.url ~ '&napfeny=' ~ (napsugarzas_wm2 | float(0) | round(0) | int) -%}
+        {%- endif -%}
+        {%- if uv_sensor not in ['', none] and is_number(states(uv_sensor)) -%}
+          {%- set ns.url = ns.url ~ '&uv=' ~ szam(states(uv_sensor)) | trim -%}
+        {%- endif -%}
+        {{ ns.url ~ '&tipus=HA_Uploader' }}
+
+  # A bekapcsolt célok párhuzamosan kapják az adatot. Egy cél hibája nem
+  # állítja meg a többit (continue_on_error).
+  #
+  # A választ szándékosan nem kérjük vissza (response_variable nélkül):
+  # az Időkép válasza nem UTF-8 kódolású, és a rest_command ilyenkor
+  # dekódolási hibát dob, amelynek üzenetében a jelszót tartalmazó URL is
+  # a naplóba kerül. Válaszkérés nélkül a rest_command nem dekódolja a választ.
+  - parallel:
+      - if:
+          - condition: template
+            value_template: "{{ idokep_kesz }}"
+        then:
+          - action: rest_command.weather_upload
+            continue_on_error: true
+            data:
+              user_agent: "IdokepAutomata/500 (Windows)"
+              url: >-
+                {%- if (fioktipus | string | lower) != 'pro' and (formatum | string | lower) == 'wu' -%}
+                  {{ 'https://automata.idokep.hu/weatherstation/updateweatherstation.php'
+                     ~ '?ID=' ~ (idokep_user | string | urlencode)
+                     ~ '&PASSWORD=' ~ (idokep_pass | string | urlencode)
+                     ~ wu_adatok }}
+                {%- else -%}
+                  {{ idokep_sajat_url }}
+                {%- endif -%}
+
+      - if:
+          - condition: template
+            value_template: "{{ metnet_kesz }}"
+        then:
+          - action: rest_command.weather_upload
+            continue_on_error: true
+            data:
+              user_agent: "HA-Weather-Uploader/3.0"
+              url: >-
+                {{ ('https' if (metnet_proto | string | lower) == 'https' else 'http')
+                   ~ '://www.metnet.hu/api/wu/updateweatherstation.php'
+                   ~ '?ID=' ~ (metnet_id | string | trim | urlencode)
+                   ~ '&PASSWORD=' ~ (metnet_key | string | urlencode)
+                   ~ wu_adatok }}
+
+      - if:
+          - condition: template
+            value_template: "{{ wu_kesz }}"
+        then:
+          - action: rest_command.weather_upload
+            continue_on_error: true
+            data:
+              user_agent: "HA-Weather-Uploader/3.0"
+              url: >-
+                {{ 'https://weatherstation.wunderground.com/weatherstation/updateweatherstation.php'
+                   ~ '?ID=' ~ (wu_id | string | trim | urlencode)
+                   ~ '&PASSWORD=' ~ (wu_key | string | urlencode)
+                   ~ wu_adatok }}
