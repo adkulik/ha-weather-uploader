@@ -86,7 +86,7 @@ A sablon-automatizmus importálásához kattints az alábbi gombra, ami varázs�
 2. Keresd meg a listában az *Időkép Automata Feltöltő (Univerzális)* sablont, és kattints az **Automatizmus létrehozása** gombra.
 3. Töltsd ki a megjelenő egyszerű grafikus felületet:
    * **Fióktípus:** Az Időképen kétféle fiók létezik, Normál és Pro. A legtöbb állomáshoz a Normál fiók megfelelő, Pro fiókra csak speciális esetekben van szükség. Ha a fiókodat az 1. lépésben linkelt haladó szintű regisztrációval hoztad létre, akkor Normál fiókod van. Az alapértelmezés a Normál.
-   * **Feltöltési formátum (csak Normál fióknál):** *Időkép formátum* (a megszokott beküldés, 24 órás csapadékkal) vagy *Weather Underground formátum* (az Időkép `automata.idokep.hu` címére, napi, éjfél óta mért csapadékkal; a napsugárzást csak ez jeleníti meg globálsugárzásként). Pro fióknál a beküldés mindig Időkép formátumú. Az alapértelmezés az Időkép formátum.
+   * **Feltöltési formátum (csak Normál fióknál):** *Időkép formátum* (a megszokott beküldés, 24 órás és napi, éjfél óta mért csapadékkal) vagy *Weather Underground formátum* (az Időkép `automata.idokep.hu` címére, napi, éjfél óta mért csapadékkal; a napsugárzást csak ez jeleníti meg globálsugárzásként). Pro fióknál a beküldés mindig Időkép formátumú. Az alapértelmezés az Időkép formátum.
    * **Felhasználónév és Jelszó:** Add meg az Időkép állomásod hivatalos azonosítóit.
    * **Ütemezés:** Válaszd ki, milyen sűrűn küldjön adatot (percenként, 2, 5, 10 vagy 15 percenként). Az alapértelmezés 5 perc, ami a legtöbb állomásnak bőven elég.
    * **Szenzorok:** Válaszd ki a legördülő menükből az okosotthonod megfelelő entitásait. Csak a Hőmérséklet megadása kötelező, az összes többi meteorológiai adat (páratartalom, légnyomás, beltéri hőmérséklet, szél, csapadék, napsugárzás, UV-index) opcionális!
@@ -109,12 +109,12 @@ A sablon a szenzorok saját mértékegységét kiolvassa, és a választott form
 | Széllökés | `szellokes` (m/s) | `windgustmph` (mph) |
 | 1 órás csapadék | `csap1h` (mm) | `rainin` (inch) |
 | 24 órás csapadék | `csap` (mm) | – |
-| Napi csapadék (éjfél óta) | – | `dailyrainin` (inch) |
+| Napi csapadék (éjfél óta) | `csapdaily` (mm) | `dailyrainin` (inch) |
 | Összes csapadék (számláló) | `csaptotal` (mm) | – |
 | Napsugárzás | `napfeny` (egész W/m²) | `solarradiation` (W/m²) |
 | UV-index | `uv` | `UV` |
 
-* **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja, a WU formátum a **napi**, éjfél óta mért csapadékot. Az 1 órás csapadék mindkettőben felmegy.
+* **Csapadék:** az éjfél óta mért **napi** csapadék mindkét formátumban felmegy: Időkép formátumban `csapdaily`, WU formátumban `dailyrainin` néven. A `csap` mező az elmúlt **24 óra** (gördülő) csapadékát kapja, ez csak az Időkép formátumban megy fel. Az 1 órás csapadék mindkettőben felmegy.
 * **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban** jeleníti meg globálsugárzásként. Időkép formátumban `napfeny` néven felmegy (egész számra kerekítve, mert ott csak egész számot fogad el), de az állomás oldalán globálsugárzásként nem jelenik meg. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
 
 ---
@@ -122,6 +122,10 @@ A sablon a szenzorok saját mértékegységét kiolvassa, és a választott form
 ## 🔄 Frissítés
 
 Új verzió megjelenésekor a Home Assistantban a **Sablon-automatizmusok** listájában kattints a sablon melletti három pöttyre, és válaszd a **Sablon-automatizmus újraimportálása** lehetőséget (angol felületen: *Re-import blueprint*). A meglévő automatizmusod beállításai megmaradnak. Hogy épp melyik verzió fut nálad, azt a sablon leírásának alján látod.
+
+### Frissítés 2.7-ről 2.8-ra
+
+Importáld újra a sablont a fent leírt módon. A `configuration.yaml`-hoz nem kell hozzányúlni. Ha a **Napi csapadék – éjfél óta** mezőben van szenzorod, az mostantól Időkép formátumban is felmegy, `csapdaily` néven. Ha eddig az éjfél óta mért csapadékot a **24 órás csapadék** mezőben adtad meg (így `csap` néven ment fel), nyisd meg az automatizmusodat, és a **Csapadék** részben tedd át ezt a szenzort a **Napi csapadék – éjfél óta** mezőbe.
 
 ### Frissítés 2.6-ról 2.7-re
 
@@ -171,6 +175,11 @@ Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik
 ---
 
 ## 📋 Változásnapló
+
+### 2.8 (2026-11-20)
+
+* Az éjfél óta mért napi csapadék Időkép formátumban is felmegy, `csapdaily` (mm) néven. A `csap` mező továbbra is a 24 órás (gördülő) csapadékot kapja.
+* A **Napi csapadék – éjfél óta** mező már nem csak a WU formátumhoz tartozik.
 
 ### 2.7 (2026-11-16)
 
