@@ -60,9 +60,11 @@ blueprint:
     fel, azt az egyes mezők leírása mutatja.
 
 
-    **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja,
-    a WU formátum a **napi**, éjfél óta mért csapadékot. Az 1 órás csapadék
-    mindkettőben felmegy.
+    **Csapadék:** az éjfél óta mért **napi** csapadék mindkét formátumban
+    felmegy: Időkép formátumban `csapdaily`, WU formátumban `dailyrainin`
+    néven. A `csap` mező az elmúlt **24 óra** (gördülő) csapadékát kapja, ez
+    csak az Időkép formátumban megy fel. Az 1 órás csapadék mindkettőben
+    felmegy.
 
 
     **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban**
@@ -114,7 +116,7 @@ blueprint:
     ---
 
 
-    **Verzió:** 2.7 · [Forráskód és változásnapló](https://github.com/adkulik/idokep.hu-uploader)
+    **Verzió:** 2.8 · [Forráskód és változásnapló](https://github.com/adkulik/idokep.hu-uploader)
   domain: automation
   source_url: https://raw.githubusercontent.com/adkulik/idokep.hu-uploader/refs/heads/main/idokep.hu-uploader.yaml
   homeassistant:
@@ -144,7 +146,8 @@ blueprint:
           name: Feltöltési formátum
           description: >-
             Csak Normál fióknál számít. Időkép formátum: a megszokott
-            `sendws.php` beküldés, 24 órás csapadékkal. Weather Underground
+            `sendws.php` beküldés, 24 órás (`csap`) és napi, éjfél óta mért
+            (`csapdaily`) csapadékkal. Weather Underground
             formátum: az Időkép `automata.idokep.hu` címére, a WU protokoll
             mezőneveivel és mértékegységeivel (°F, inHg, mph, inch), napi
             (éjfél óta mért) csapadékkal; a globálsugárzást csak ez fogadja.
@@ -285,10 +288,9 @@ blueprint:
       name: Csapadék
       icon: mdi:weather-pouring
       description: >-
-        Időkép formátumban az 1 órás, a 24 órás és az összes csapadék megy fel
-        mm-ben (ugyanezt a hármat küldi a hivatalos Időkép feltöltő program
-        is). WU formátumban az 1 órás és a napi, éjfél óta mért csapadék megy
-        fel, inch-ben.
+        Időkép formátumban az 1 órás, a 24 órás, a napi (éjfél óta mért) és az
+        összes csapadék megy fel mm-ben. WU formátumban az 1 órás és a napi,
+        éjfél óta mért csapadék megy fel, inch-ben.
       collapsed: true
       input:
         rain_1h:
@@ -305,18 +307,17 @@ blueprint:
           name: 24 órás csapadék (Opcionális, csak Időkép formátum)
           description: >-
             Az elmúlt 24 óra csapadékösszege mm-ben (gördülő 24 órás ablak,
-            nem az éjfél óta mért napi összeg). Időkép: `csap` (mm). WU
-            formátumnál nem megy fel, ott a napi csapadék helyettesíti.
+            nem az éjfél óta mért napi összeg — azt a Napi csapadék mezőben add
+            meg). Időkép: `csap` (mm). WU formátumnál nem megy fel.
           default: ""
           selector:
             entity:
               domain: sensor
         rain_daily:
-          name: Napi csapadék – éjfél óta (Opcionális, csak WU formátum)
+          name: Napi csapadék – éjfél óta (Opcionális)
           description: >-
-            Az éjfél óta hullott csapadék mm-ben. WU: `dailyrainin` (inch).
-            Időkép formátumnál nem megy fel, ott a 24 órás csapadék
-            helyettesíti.
+            Az éjfél óta hullott csapadék mm-ben. Mindkét formátumban felmegy.
+            Időkép: `csapdaily` (mm), WU: `dailyrainin` (inch).
           default: ""
           selector:
             entity:
@@ -437,6 +438,7 @@ actions:
               ('p', press_sensor),
               ('inhom', indoor_sensor),
               ('csap', r_24h),
+              ('csapdaily', r_daily),
               ('csap1h', r_1h),
               ('csaptotal', r_total)
             ] -%}
