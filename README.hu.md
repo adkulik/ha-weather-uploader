@@ -95,6 +95,7 @@ A Metnet és a Weather Underground mindig, az Időkép választhatóan a Weather
 |---|---|---|
 | Hőmérséklet | `hom` (°C) | `tempf` (°F) |
 | Páratartalom | `rh` (%) | `humidity` (%) |
+| Harmatpont (számolt) | – | `dewptf` (°F) |
 | Légnyomás | `p` (hPa) | `baromin` (inHg) |
 | Beltéri hőmérséklet | `inhom` (°C) | `indoortempf` (°F) |
 | Szélirány | `szelirany` (fok) | `winddir` (fok) |
@@ -157,6 +158,7 @@ Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik
 * Új, általános `rest_command.weather_upload` parancs (a `User-Agent` fejlécet oldalanként a sablon adja át). Új oldalhoz nem kell a `configuration.yaml`-hoz nyúlni.
 * A Weather Underground formátumú mérési részt a sablon egyszer állítja össze, és ezt kapja a Metnet, a Weather Underground és az Időkép WU formátuma.
 * Metnet: választható HTTP (a Metnet leírása szerint) vagy HTTPS kapcsolat.
+* WU formátumban a harmatpontot (`dewptf`) a sablon a hőmérsékletből és a páratartalomból számolja.
 
 ### 2.8 (2026-11-20)
 

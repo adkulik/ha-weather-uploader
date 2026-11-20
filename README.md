@@ -91,6 +91,7 @@ Metnet and Weather Underground always use the Weather Underground (WU) protocol;
 |---|---|---|
 | Temperature (Hőmérséklet) | `hom` (°C) | `tempf` (°F) |
 | Humidity (Páratartalom) | `rh` (%) | `humidity` (%) |
+| Dew point (calculated) | – | `dewptf` (°F) |
 | Pressure (Légnyomás) | `p` (hPa) | `baromin` (inHg) |
 | Indoor temperature (Beltéri hőmérséklet) | `inhom` (°C) | `indoortempf` (°F) |
 | Wind direction (Szélirány) | `szelirany` (°) | `winddir` (°) |
@@ -148,6 +149,7 @@ New blueprint (`weather-uploader.yaml`); the repository is renamed to `ha-weathe
 * New generic `rest_command.weather_upload` (the blueprint sets the `User-Agent` per site), so new sites need no `configuration.yaml` change.
 * The Weather Underground measurement part is built once and shared by Metnet, Weather Underground and Időkép's WU format.
 * Metnet: choice of HTTP (as documented) or HTTPS.
+* In WU format the dew point (`dewptf`) is calculated from temperature and humidity.
 
 ### 2.8 (2026-11-20)
 

@@ -264,7 +264,10 @@ blueprint:
               device_class: temperature
         humidity_sensor:
           name: Páratartalom (Opcionális)
-          description: Időkép `rh`, WU formátum `humidity` néven megy, %-ban.
+          description: >-
+            Időkép `rh`, WU formátum `humidity` néven megy, %-ban. WU
+            formátumban ebből és a hőmérsékletből a harmatpontot (`dewptf`) is
+            kiszámolja.
           default: ""
           selector:
             entity:
@@ -494,7 +497,15 @@ actions:
           {%- endif -%}
         {%- endfor -%}
         {%- if hum_sensor not in ['', none] and is_number(states(hum_sensor)) -%}
-          {%- set w.q = w.q ~ '&humidity=' ~ (states(hum_sensor) | float(0) | round(0) | int) -%}
+          {%- set rh = states(hum_sensor) | float(0) -%}
+          {%- set w.q = w.q ~ '&humidity=' ~ (rh | round(0) | int) -%}
+          {#- Harmatpont (°F), a kültéri hőmérsékletből és páratartalomból számolva (Magnus-képlet) -#}
+          {%- if rh > 0 and is_number(states(temp_sensor)) -%}
+            {%- set t = states(temp_sensor) | float(0) -%}
+            {%- set tc = ((t - 32) / 1.8) if (state_attr(temp_sensor, 'unit_of_measurement') or '°C') | lower | trim in ['°f', 'f'] else t -%}
+            {%- set a = log(rh / 100) + (17.62 * tc / (243.12 + tc)) -%}
+            {%- set w.q = w.q ~ '&dewptf=' ~ ('%.1f' | format(243.12 * a / (17.62 - a) * 1.8 + 32)) -%}
+          {%- endif -%}
         {%- endif -%}
         {%- if press_sensor not in ['', none] and is_number(states(press_sensor)) -%}
           {%- set v = states(press_sensor) | float(0) -%}
