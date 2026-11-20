@@ -59,10 +59,9 @@ blueprint:
     **Biztonsági megjegyzés:** a jelszavak és kulcsok az URL részei, ezért
     hiba esetén a Home Assistant a teljes URL-t kiírhatja a rendszernaplóba,
     ami bekerül a diagnosztikai csomagokba és a biztonsági mentésekbe is.
-    Minden oldalhoz használj külön, máshol nem használt jelszót. Az Időkép és
-    a Weather Underground felé a beküldés titkosított HTTPS-kapcsolaton megy;
-    a Metnet a saját leírása szerint HTTP-n (80-as port) fogad, a Metnet
-    részben HTTPS-re válthatsz, ha a Metnet elfogadja.
+    Minden oldalhoz használj külön, máshol nem használt jelszót. A beküldés
+    mindhárom oldal felé titkosított HTTPS-kapcsolaton megy (a Metnetnél
+    HTTP is választható).
 
 
     ### ❗ Fontos figyelmeztetés: Csak hiteles adatokat tölts fel!
@@ -160,6 +159,7 @@ blueprint:
       input:
         metnet_enabled:
           name: Feltöltés a Metnetre
+          description: Kapcsold be, különben a lenti adatok kitöltése után sem megy fel adat.
           default: false
           selector:
             boolean:
@@ -181,19 +181,17 @@ blueprint:
         metnet_protocol:
           name: Kapcsolat
           description: >-
-            A Metnet leírása HTTP-t (80-as port) ad meg. Ha a HTTPS is
-            működik nálad, válaszd azt, mert akkor a kulcs titkosítva utazik.
-            Ha HTTPS mellett a feltöltés nem jelenik meg a Metneten, válts
-            vissza HTTP-re.
-          default: http
+            A Metnet HTTPS-en és HTTP-n (80-as port) is fogadja az adatot.
+            A HTTPS az ajánlott, mert így a kulcs titkosítva utazik.
+          default: https
           selector:
             select:
               mode: list
               options:
-                - label: HTTP (a Metnet leírása szerint)
-                  value: http
-                - label: HTTPS (titkosított)
+                - label: HTTPS (titkosított, ajánlott)
                   value: https
+                - label: HTTP
+                  value: http
 
     wunderground:
       name: Weather Underground
