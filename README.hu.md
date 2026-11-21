@@ -1,14 +1,15 @@
 🇬🇧 [English](README.md) | 🇭🇺 **Magyar**
 
-# ⛅ Időjárás-állomás Feltöltő – Időkép, Metnet, Weather Underground (Home Assistant Blueprint)
+# ⛅ Időjárás-állomás Feltöltő – Időkép, Metnet, MET-ÉSZ, Weather Underground (Home Assistant Blueprint)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/adkulik)
 
 Ezzel a Home Assistant sablon-automatizmussal (angolul: Blueprint) egy grafikus felületen keresztül kötheted be az okosotthonod meteorológiai szenzorait egyszerre több időjárási hálózatba:
 
-* **Időkép** (Normál és Pro fiók, Időkép vagy Weather Underground formátumban)
-* **Metnet**
-* **Weather Underground**
+* **[Időkép](https://www.idokep.hu)** (Normál és Pro fiók, Időkép vagy Weather Underground formátumban)
+* **[Metnet](https://www.metnet.hu)**
+* **[MET-ÉSZ](https://metesz.met.hu)**, a HungaroMet önkéntes megfigyelőhálózata
+* **[Weather Underground](https://www.wunderground.com)**
 
 Minden oldalt külön kapcsolhatsz be, a szenzorokat pedig csak egyszer kell megadni. A sablon a háttérben elvégzi a nehezét:
 
@@ -39,8 +40,9 @@ A sablon **Home Assistant 2024.10 vagy újabb** verziót igényel.
 Fiók azokhoz az oldalakhoz, ahová fel szeretnél tölteni:
 
 * **Időkép:** haladó szintű fiók, **[regisztráció itt](https://www.idokep.hu/regisztracio?szint=halado)**. Az így létrehozott fiók Normál típusú.
-* **Metnet:** az állomás-beállítási oldalon, a *Weather Underground protokollal küldő állomás* résznél kapod meg az állomásazonosítót (Station ID) és a kulcsot.
-* **Weather Underground:** a *My Devices* oldalon kapod meg a Station ID-t és a Station Key-t.
+* **[Metnet](https://www.metnet.hu):** az állomás-beállítási oldalon, a *Weather Underground protokollal küldő állomás* résznél kapod meg az állomásazonosítót (Station ID) és a kulcsot.
+* **[MET-ÉSZ](https://metesz.met.hu):** az állomásod **helyszínére** belépve, a *Beállítás* lapon kapod meg a PWS azonosítót, és ott adod meg a fix jelszót ([útmutató](https://docs.google.com/document/d/1tJW0m9SudvlGxoeCq2PnnRyquk1i1p9iz93StwaQMNY)).
+* **[Weather Underground](https://www.wunderground.com):** a [My Devices](https://www.wunderground.com/member/devices) oldalon kapod meg a Station ID-t és a Station Key-t.
 
 A sablon a Home Assistant beépített `rest_command` integrációján keresztül küldi az adatokat, ehhez egy apró bejegyzés kell a `configuration.yaml` fájlba:
 
@@ -77,9 +79,9 @@ rest_command:
 ## ⚙️ 3. Lépés: Beállítás a felületen
 
 1. Menj a **Beállítások → Automatizmusok és jelenetek → Sablon-automatizmusok** oldalra.
-2. Keresd meg az *Időjárás-állomás Feltöltő (Időkép, Metnet, Wunderground)* sablont, és kattints az **Automatizmus létrehozása** gombra.
+2. Keresd meg az *Időjárás-állomás Feltöltő (Időkép, Metnet, MET-ÉSZ, Wunderground)* sablont, és kattints az **Automatizmus létrehozása** gombra.
 3. Töltsd ki a felületet:
-   * **Időkép / Metnet / Weather Underground:** kapcsold be (a „Feltöltés a …” kapcsolóval) azokat az oldalakat, ahová fel szeretnél tölteni, és add meg a hozzájuk tartozó azonosítókat. A kikapcsolt vagy kitöltetlen oldalra nem megy adat.
+   * **Időkép / Metnet / MET-ÉSZ / Weather Underground:** kapcsold be (a „Feltöltés a …” kapcsolóval) azokat az oldalakat, ahová fel szeretnél tölteni, és add meg a hozzájuk tartozó azonosítókat. A kikapcsolt vagy kitöltetlen oldalra nem megy adat.
      * *Időkép – Fióktípus:* Normál vagy Pro. Ha a fiókodat a haladó szintű regisztrációval hoztad létre, Normál fiókod van.
      * *Időkép – Feltöltési formátum (csak Normál fióknál):* Időkép formátum (a megszokott beküldés, 24 órás csapadékkal) vagy Weather Underground formátum (napi csapadékkal; a napsugárzást csak ez jeleníti meg globálsugárzásként).
    * **Ütemezés:** percenként, 2, 5, 10 vagy 15 percenként (alapértelmezés: 5 perc). Minden bekapcsolt oldalra ugyanezzel az ütemmel megy.
@@ -88,9 +90,9 @@ rest_command:
 
 ### 🌬️ Formátumok és mértékegységek
 
-A Metnet és a Weather Underground mindig, az Időkép választhatóan a Weather Underground (WU) protokollt használja. A sablon a szenzorok saját mértékegységét kiolvassa, és átváltja. A szélirány fokban (0–360) vagy égtáj-rövidítésként is megadható, angolul (N, NNE, NE …) vagy magyarul (É, ÉK, K, DK, D, DNY, NY, ÉNY).
+A Metnet, a MET-ÉSZ és a Weather Underground mindig, az Időkép választhatóan a Weather Underground (WU) protokollt használja. A sablon a szenzorok saját mértékegységét kiolvassa, és átváltja. A szélirány fokban (0–360) vagy égtáj-rövidítésként is megadható, angolul (N, NNE, NE …) vagy magyarul (É, ÉK, K, DK, D, DNY, NY, ÉNY).
 
-| Adat | Időkép formátum | WU formátum (Metnet, Weather Underground, Időkép WU) |
+| Adat | Időkép formátum | WU formátum (Metnet, MET-ÉSZ, Weather Underground, Időkép WU) |
 |---|---|---|
 | Hőmérséklet | `hom` (°C) | `tempf` (°F) |
 | Páratartalom | `rh` (%) | `humidity` (%) |
@@ -107,7 +109,7 @@ A Metnet és a Weather Underground mindig, az Időkép választhatóan a Weather
 | Napsugárzás | `napfeny` (egész W/m²) | `solarradiation` (W/m²) |
 | UV-index | `uv` | `UV` |
 
-* **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja, a WU formátum a **napi**, éjfél óta mért csapadékot. Ha a Metnetre vagy a Weather Undergroundra is töltesz, add meg a *Napi csapadék – éjfél óta* szenzort.
+* **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja, a WU formátum a **napi**, éjfél óta mért csapadékot. Ha a Metnetre, a MET-ÉSZ-be vagy a Weather Undergroundra is töltesz, add meg a *Napi csapadék – éjfél óta* szenzort.
 * **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban** jeleníti meg globálsugárzásként. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
 
 ---
@@ -147,6 +149,12 @@ Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik
 ---
 
 ## 📋 Változásnapló
+
+### 3.1 (2026-11-21)
+
+* Új szolgáltatás: **[MET-ÉSZ](https://metesz.met.hu)**, a HungaroMet önkéntes megfigyelőhálózata. Ugyanazok a mezők mennek fel, mint a Weather Undergroundra, a `dateutc` mezőben pontos UTC idővel.
+* Minden szolgáltatás szekciójában ott van az oldal linkje, és hogy hol találod a belépési adatokat.
+* A `configuration.yaml`-hoz nem kell nyúlni, a meglévő `rest_command.weather_upload` parancsot használja.
 
 ### 3.0 (2026-11-20) – Időjárás-állomás Feltöltő
 

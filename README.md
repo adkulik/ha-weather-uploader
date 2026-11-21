@@ -1,14 +1,15 @@
 🇬🇧 **English** | 🇭🇺 [Magyar](README.hu.md)
 
-# ⛅ Weather Station Uploader – Időkép, Metnet, Weather Underground (Home Assistant Blueprint)
+# ⛅ Weather Station Uploader – Időkép, Metnet, MET-ÉSZ, Weather Underground (Home Assistant Blueprint)
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/adkulik)
 
 This Home Assistant blueprint sends your weather sensors to several weather networks at once, configured entirely from the UI:
 
-* **Időkép** (Hungary's largest weather network; Normál and Pro accounts, native or Weather Underground format)
-* **Metnet** (Hungarian weather community)
-* **Weather Underground**
+* **[Időkép](https://www.idokep.hu)** (Hungary's largest weather network; Normál and Pro accounts, native or Weather Underground format)
+* **[Metnet](https://www.metnet.hu)** (Hungarian weather community)
+* **[MET-ÉSZ](https://metesz.met.hu)** (the volunteer observer network of HungaroMet, the Hungarian Meteorological Service)
+* **[Weather Underground](https://www.wunderground.com)**
 
 Each site can be switched on separately, and you pick your sensors only once. The blueprint takes care of the rest:
 
@@ -40,8 +41,9 @@ Requires **Home Assistant 2024.10 or newer**.
 An account on each site you want to upload to:
 
 * **Időkép:** an advanced-level account, [register here](https://www.idokep.hu/regisztracio?szint=halado) (this creates a *Normál* account).
-* **Metnet:** your Station ID and key are on the station settings page, under *Weather Underground protokollal küldő állomás*.
-* **Weather Underground:** your Station ID and Station Key are on the *My Devices* page.
+* **[Metnet](https://www.metnet.hu):** your Station ID and key are on the station settings page, under *Weather Underground protokollal küldő állomás*.
+* **[MET-ÉSZ](https://metesz.met.hu):** open your station's **location** and its *Beállítás* (settings) tab for the PWS ID and the fixed password you set there ([guide, Hungarian](https://docs.google.com/document/d/1tJW0m9SudvlGxoeCq2PnnRyquk1i1p9iz93StwaQMNY)).
+* **[Weather Underground](https://www.wunderground.com):** your Station ID and Station Key are on the [My Devices](https://www.wunderground.com/member/devices) page.
 
 The blueprint sends data through Home Assistant's built-in `rest_command` integration, which needs one small entry in `configuration.yaml`:
 
@@ -74,9 +76,9 @@ Or import this URL manually under **Settings → Automations & scenes → Bluepr
 
 ## ⚙️ Step 3: Configure
 
-Create an automation from the *Időjárás-állomás Feltöltő (Időkép, Metnet, Wunderground)* blueprint:
+Create an automation from the *Időjárás-állomás Feltöltő (Időkép, Metnet, MET-ÉSZ, Wunderground)* blueprint:
 
-* **Időkép / Metnet / Weather Underground:** switch on (with the *Feltöltés a …* toggle) the sites you want and fill in their credentials. Disabled or incomplete sites are skipped.
+* **Időkép / Metnet / MET-ÉSZ / Weather Underground:** switch on (with the *Feltöltés a …* toggle) the sites you want and fill in their credentials. Disabled or incomplete sites are skipped.
   * *Időkép – Fióktípus (account type):* Normál or Pro.
   * *Időkép – Feltöltési formátum (upload format, Normál only):* Időkép format (24-hour rain) or Weather Underground format (daily rain; only this one shows solar radiation as global radiation on Időkép).
 * **Ütemezés (schedule):** every 1, 2, 5, 10 or 15 minutes (default 5), shared by all sites.
@@ -84,9 +86,9 @@ Create an automation from the *Időjárás-állomás Feltöltő (Időkép, Metne
 
 ### Formats and units
 
-Metnet and Weather Underground always use the Weather Underground (WU) protocol; Időkép can use either. Units are read from each sensor and converted. Wind direction can be degrees (0–360) or a compass point in English (N, NNE …) or Hungarian (É, ÉK, K, DK, D, DNY, NY, ÉNY).
+Metnet, MET-ÉSZ and Weather Underground always use the Weather Underground (WU) protocol; Időkép can use either. Units are read from each sensor and converted. Wind direction can be degrees (0–360) or a compass point in English (N, NNE …) or Hungarian (É, ÉK, K, DK, D, DNY, NY, ÉNY).
 
-| Data (Hungarian field) | Időkép format | WU format (Metnet, Weather Underground, Időkép WU) |
+| Data (Hungarian field) | Időkép format | WU format (Metnet, MET-ÉSZ, Weather Underground, Időkép WU) |
 |---|---|---|
 | Temperature (Hőmérséklet) | `hom` (°C) | `tempf` (°F) |
 | Humidity (Páratartalom) | `rh` (%) | `humidity` (%) |
@@ -103,7 +105,7 @@ Metnet and Weather Underground always use the Weather Underground (WU) protocol;
 | Solar radiation (Napsugárzás) | `napfeny` (integer W/m²) | `solarradiation` (W/m²) |
 | UV index (UV-index) | `uv` | `UV` |
 
-If you upload to Metnet or Weather Underground, set the *daily rain since midnight* sensor. Lux sensors are approximately converted to W/m².
+If you upload to Metnet, MET-ÉSZ or Weather Underground, set the *daily rain since midnight* sensor. Lux sensors are approximately converted to W/m².
 
 ---
 
@@ -138,6 +140,12 @@ Recurring support is available through [GitHub Sponsors](https://github.com/spon
 ## 📋 Changelog
 
 The full changelog, including the 1.x–2.x Időkép uploader history, is in the [Hungarian README](README.hu.md#-változásnapló).
+
+### 3.1 (2026-11-21)
+
+* New site: **[MET-ÉSZ](https://metesz.met.hu)**, HungaroMet's volunteer observer network. It gets the same fields as Weather Underground, with an exact UTC time in `dateutc`.
+* Each site's section links to the site and says where to find the credentials.
+* No `configuration.yaml` change: it uses the existing `rest_command.weather_upload`.
 
 ### 3.0 (2026-11-20) – Weather Station Uploader
 
