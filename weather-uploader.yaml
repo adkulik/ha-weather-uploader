@@ -48,13 +48,15 @@ blueprint:
     mutatja.
 
 
-    **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja,
-    a WU formátum a **napi**, éjfél óta mért csapadékot. Az 1 órás csapadék
-    mindkettőben felmegy.
+    **Csapadék:** az éjfél óta mért **napi** csapadék mindkét formátumban
+    felmegy: Időkép formátumban `csapdaily`, WU formátumban `dailyrainin`
+    néven. A **24 órás** (gördülő) csapadék (`csap`) csak az Időkép formátumban
+    megy fel. Az 1 órás csapadék mindkettőben felmegy.
 
 
-    **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban**
-    jeleníti meg globálsugárzásként.
+    **Globálsugárzás:** a napsugárzást az Időkép mindkét formátumban
+    globálsugárzásként jeleníti meg. Sötétben, 0 W/m²-nél az Időkép nem mutat
+    értéket, ez nem hiba.
 
 
     **Biztonsági megjegyzés:** a jelszavak és kulcsok az URL részei, ezért
@@ -89,7 +91,7 @@ blueprint:
     ---
 
 
-    **Verzió:** 3.1 · [Forráskód és változásnapló](https://github.com/adkulik/ha-weather-uploader)
+    **Verzió:** 3.1.1 · [Forráskód és változásnapló](https://github.com/adkulik/ha-weather-uploader)
   domain: automation
   source_url: https://raw.githubusercontent.com/adkulik/ha-weather-uploader/refs/heads/main/weather-uploader.yaml
   homeassistant:
@@ -127,10 +129,10 @@ blueprint:
           name: Feltöltési formátum
           description: >-
             Csak Normál fióknál számít. Időkép formátum: a megszokott
-            `sendws.php` beküldés, 24 órás csapadékkal. Weather Underground
-            formátum: az Időkép `automata.idokep.hu` címére, a WU protokoll
-            mezőneveivel és mértékegységeivel, napi (éjfél óta mért)
-            csapadékkal; a globálsugárzást csak ez fogadja. Pro fióknál a
+            `sendws.php` beküldés, 24 órás (`csap`) és napi, éjfél óta mért
+            (`csapdaily`) csapadékkal. Weather Underground formátum: az Időkép
+            `automata.idokep.hu` címére, a WU protokoll mezőneveivel és
+            mértékegységeivel, napi (éjfél óta mért) csapadékkal. Pro fióknál a
             beküldés mindig Időkép formátumú.
           default: idokep
           selector:
@@ -358,8 +360,8 @@ blueprint:
       name: Csapadék
       icon: mdi:weather-pouring
       description: >-
-        Időkép formátumban az 1 órás, a 24 órás és az összes csapadék megy fel
-        mm-ben. WU formátumban (Metnet, MET-ÉSZ, Weather Underground, és az Időkép WU
+        Időkép formátumban az 1 órás, a 24 órás, a napi (éjfél óta mért) és az
+        összes csapadék megy fel mm-ben. WU formátumban (Metnet, MET-ÉSZ, Weather Underground, és az Időkép WU
         formátuma) az 1 órás és a napi, éjfél óta mért csapadék megy fel,
         inch-ben.
       collapsed: true
@@ -378,16 +380,17 @@ blueprint:
           name: 24 órás csapadék (Opcionális, csak Időkép formátum)
           description: >-
             Az elmúlt 24 óra csapadékösszege mm-ben (gördülő 24 órás ablak,
-            nem az éjfél óta mért napi összeg). Időkép: `csap` (mm).
+            nem az éjfél óta mért napi összeg, azt a Napi csapadék mezőben add
+            meg). Időkép: `csap` (mm).
           default: ""
           selector:
             entity:
               domain: sensor
         rain_daily:
-          name: Napi csapadék – éjfél óta (Opcionális, WU formátum)
+          name: Napi csapadék – éjfél óta (Opcionális)
           description: >-
-            Az éjfél óta hullott csapadék mm-ben. WU formátum: `dailyrainin`
-            (inch). A Metnet, a MET-ÉSZ és a Weather Underground ezt használja napi
+            Az éjfél óta hullott csapadék mm-ben. Mindkét formátumban felmegy.
+            Időkép: `csapdaily` (mm), WU formátum: `dailyrainin` (inch). A Metnet, a MET-ÉSZ és a Weather Underground ezt használja napi
             csapadékként.
           default: ""
           selector:
@@ -413,6 +416,7 @@ blueprint:
           description: >-
             W/m² vagy lux; a luxot közelítőleg W/m²-re váltja. Időkép:
             `napfeny` (egész W/m²), WU formátum: `solarradiation` (W/m²).
+            Sötétben, 0 W/m²-nél az Időkép nem jelenít meg értéket.
           default: ""
           selector:
             entity:
@@ -594,6 +598,7 @@ actions:
               ('p', press_sensor),
               ('inhom', indoor_sensor),
               ('csap', r_24h),
+              ('csapdaily', r_daily),
               ('csap1h', r_1h),
               ('csaptotal', r_total)
             ] -%}
@@ -652,7 +657,7 @@ actions:
           - action: rest_command.weather_upload
             continue_on_error: true
             data:
-              user_agent: "HA-Weather-Uploader/3.1"
+              user_agent: "HA-Weather-Uploader/3.1.1"
               url: >-
                 {{ 'https://www.metnet.hu/api/wu/updateweatherstation.php'
                    ~ '?ID=' ~ (metnet_id | string | trim | urlencode)
@@ -667,7 +672,7 @@ actions:
           - action: rest_command.weather_upload
             continue_on_error: true
             data:
-              user_agent: "HA-Weather-Uploader/3.1"
+              user_agent: "HA-Weather-Uploader/3.1.1"
               url: >-
                 {{ 'https://metesz.met.hu/pws'
                    ~ '?ID=' ~ (metesz_id | string | trim | urlencode)
@@ -682,7 +687,7 @@ actions:
           - action: rest_command.weather_upload
             continue_on_error: true
             data:
-              user_agent: "HA-Weather-Uploader/3.1"
+              user_agent: "HA-Weather-Uploader/3.1.1"
               url: >-
                 {{ 'https://weatherstation.wunderground.com/weatherstation/updateweatherstation.php'
                    ~ '?ID=' ~ (wu_id | string | trim | urlencode)

@@ -83,7 +83,7 @@ rest_command:
 3. Töltsd ki a felületet:
    * **Időkép / Metnet / MET-ÉSZ / Weather Underground:** kapcsold be (a „Feltöltés a …” kapcsolóval) azokat az oldalakat, ahová fel szeretnél tölteni, és add meg a hozzájuk tartozó azonosítókat. A kikapcsolt vagy kitöltetlen oldalra nem megy adat.
      * *Időkép – Fióktípus:* Normál vagy Pro. Ha a fiókodat a haladó szintű regisztrációval hoztad létre, Normál fiókod van.
-     * *Időkép – Feltöltési formátum (csak Normál fióknál):* Időkép formátum (a megszokott beküldés, 24 órás csapadékkal) vagy Weather Underground formátum (napi csapadékkal; a napsugárzást csak ez jeleníti meg globálsugárzásként).
+     * *Időkép – Feltöltési formátum (csak Normál fióknál):* Időkép formátum (a megszokott beküldés, 24 órás és napi csapadékkal) vagy Weather Underground formátum (napi csapadékkal).
    * **Ütemezés:** percenként, 2, 5, 10 vagy 15 percenként (alapértelmezés: 5 perc). Minden bekapcsolt oldalra ugyanezzel az ütemmel megy.
    * **Szenzorok:** csak a Hőmérséklet kötelező, minden más (páratartalom, légnyomás, beltéri hőmérséklet, szél, csapadék, napsugárzás, UV-index) opcionális.
 4. Mentsd el az automatizmust.
@@ -104,13 +104,13 @@ A Metnet, a MET-ÉSZ és a Weather Underground mindig, az Időkép választható
 | Széllökés | `szellokes` (m/s) | `windgustmph` (mph) |
 | 1 órás csapadék | `csap1h` (mm) | `rainin` (inch) |
 | 24 órás csapadék | `csap` (mm) | – |
-| Napi csapadék (éjfél óta) | – | `dailyrainin` (inch) |
+| Napi csapadék (éjfél óta) | `csapdaily` (mm) | `dailyrainin` (inch) |
 | Összes csapadék (számláló) | `csaptotal` (mm) | – |
 | Napsugárzás | `napfeny` (egész W/m²) | `solarradiation` (W/m²) |
 | UV-index | `uv` | `UV` |
 
-* **Csapadék:** az Időkép formátum a **24 órás** (gördülő) csapadékot fogadja, a WU formátum a **napi**, éjfél óta mért csapadékot. Ha a Metnetre, a MET-ÉSZ-be vagy a Weather Undergroundra is töltesz, add meg a *Napi csapadék – éjfél óta* szenzort.
-* **Globálsugárzás:** a napsugárzást az Időkép csak a **WU formátumban** jeleníti meg globálsugárzásként. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
+* **Csapadék:** az éjfél óta mért **napi** csapadék mindkét formátumban felmegy: Időkép formátumban `csapdaily`, WU formátumban `dailyrainin` néven. A **24 órás** (gördülő) csapadék (`csap`) csak az Időkép formátumban megy fel. Ha a Metnetre, a MET-ÉSZ-be vagy a Weather Undergroundra is töltesz, add meg a *Napi csapadék – éjfél óta* szenzort.
+* **Globálsugárzás:** a napsugárzást az Időkép mindkét formátumban globálsugárzásként jeleníti meg. Sötétben, 0 W/m²-nél az Időkép nem mutat értéket, ez nem hiba. Ha a szenzor luxban mér, a sablon közelítőleg W/m²-re váltja.
 
 ---
 
@@ -149,6 +149,13 @@ Rendszeres támogatásra a [GitHub Sponsors](https://github.com/sponsors/adkulik
 ---
 
 ## 📋 Változásnapló
+
+### 3.1.1 (2026-11-21)
+
+* Az éjfél óta mért napi csapadék Időkép formátumban is felmegy, `csapdaily` (mm) néven. A `csap` mező továbbra is a 24 órás (gördülő) csapadékot kapja. Köszönet @bociusz javaslatáért (#6).
+* Javítás a dokumentációban: a globálsugárzást az Időkép mindkét formátumban megjeleníti, nem csak a WU formátumban. Sötétben (0 W/m²) nem mutat értéket.
+
+**Frissítés:** importáld újra a sablont. Ha eddig az éjfél óta mért csapadékot a **24 órás csapadék** mezőben adtad meg, tedd át a **Napi csapadék – éjfél óta** mezőbe.
 
 ### 3.1 (2026-11-21)
 

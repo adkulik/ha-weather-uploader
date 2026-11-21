@@ -80,7 +80,7 @@ Create an automation from the *Időjárás-állomás Feltöltő (Időkép, Metne
 
 * **Időkép / Metnet / MET-ÉSZ / Weather Underground:** switch on (with the *Feltöltés a …* toggle) the sites you want and fill in their credentials. Disabled or incomplete sites are skipped.
   * *Időkép – Fióktípus (account type):* Normál or Pro.
-  * *Időkép – Feltöltési formátum (upload format, Normál only):* Időkép format (24-hour rain) or Weather Underground format (daily rain; only this one shows solar radiation as global radiation on Időkép).
+  * *Időkép – Feltöltési formátum (upload format, Normál only):* Időkép format (24-hour and daily rain) or Weather Underground format (daily rain).
 * **Ütemezés (schedule):** every 1, 2, 5, 10 or 15 minutes (default 5), shared by all sites.
 * **Sensors:** only temperature is required; everything else is optional.
 
@@ -100,12 +100,12 @@ Metnet, MET-ÉSZ and Weather Underground always use the Weather Underground (WU)
 | Wind gust (Széllökés) | `szellokes` (m/s) | `windgustmph` (mph) |
 | 1-hour rain (1 órás csapadék) | `csap1h` (mm) | `rainin` (in) |
 | 24-hour rain (24 órás csapadék) | `csap` (mm) | – |
-| Daily rain since midnight (Napi csapadék – éjfél óta) | – | `dailyrainin` (in) |
+| Daily rain since midnight (Napi csapadék – éjfél óta) | `csapdaily` (mm) | `dailyrainin` (in) |
 | Rain counter (Összes csapadék) | `csaptotal` (mm) | – |
 | Solar radiation (Napsugárzás) | `napfeny` (integer W/m²) | `solarradiation` (W/m²) |
 | UV index (UV-index) | `uv` | `UV` |
 
-If you upload to Metnet, MET-ÉSZ or Weather Underground, set the *daily rain since midnight* sensor. Lux sensors are approximately converted to W/m².
+Set the *daily rain since midnight* sensor for every site: Időkép gets it as `csapdaily`, the WU-format sites as `dailyrainin`. Időkép shows solar radiation in both formats; in the dark (0 W/m²) it shows no value. Lux sensors are approximately converted to W/m².
 
 ---
 
@@ -140,6 +140,11 @@ Recurring support is available through [GitHub Sponsors](https://github.com/spon
 ## 📋 Changelog
 
 The full changelog, including the 1.x–2.x Időkép uploader history, is in the [Hungarian README](README.hu.md#-változásnapló).
+
+### 3.1.1 (2026-11-21)
+
+* Daily rain since midnight is now also sent in Időkép format, as `csapdaily` (mm). `csap` still gets the rolling 24-hour rain. Thanks to @bociusz for the suggestion (#6).
+* Docs fix: Időkép shows solar radiation in both formats, not only in WU format. In the dark (0 W/m²) it shows no value.
 
 ### 3.1 (2026-11-21)
 
