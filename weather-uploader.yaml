@@ -1,8 +1,9 @@
 blueprint:
-  name: Időjárás-állomás Feltöltő (Időkép, Metnet, Wunderground)
+  name: Időjárás-állomás Feltöltő (Időkép, Metnet, MET-ÉSZ, Wunderground)
   description: >-
     Beküldi az okosotthon meteorológiai adatait egyszerre több időjárási
-    hálózatba: **Időkép**, **Metnet** és **Weather Underground**. Minden
+    hálózatba: **Időkép**, **Metnet**, **MET-ÉSZ** (HungaroMet) és **Weather
+    Underground**. Minden
     oldalt külön kapcsolhatsz be, a szenzorokat pedig csak egyszer kell
     megadni.
 
@@ -39,7 +40,7 @@ blueprint:
     rendszernaplóba írja.
 
 
-    **Formátumok:** a Metnet és a Weather Underground mindig, az Időkép
+    **Formátumok:** a Metnet, a MET-ÉSZ és a Weather Underground mindig, az Időkép
     választhatóan a Weather Underground (WU) protokollt használja, a WU
     mezőneveivel és mértékegységeivel (°F, inHg, mph, inch). Az Időkép saját
     formátuma (`sendws.php`) metrikus mértékegységeket használ. Hogy melyik
@@ -60,7 +61,7 @@ blueprint:
     hiba esetén a Home Assistant a teljes URL-t kiírhatja a rendszernaplóba,
     ami bekerül a diagnosztikai csomagokba és a biztonsági mentésekbe is.
     Minden oldalhoz használj külön, máshol nem használt jelszót. A beküldés
-    mindhárom oldal felé titkosított HTTPS-kapcsolaton megy.
+    minden oldal felé titkosított HTTPS-kapcsolaton megy.
 
 
     ### ❗ Fontos figyelmeztetés: Csak hiteles adatokat tölts fel!
@@ -88,7 +89,7 @@ blueprint:
     ---
 
 
-    **Verzió:** 3.0 · [Forráskód és változásnapló](https://github.com/adkulik/ha-weather-uploader)
+    **Verzió:** 3.1 · [Forráskód és változásnapló](https://github.com/adkulik/ha-weather-uploader)
   domain: automation
   source_url: https://raw.githubusercontent.com/adkulik/ha-weather-uploader/refs/heads/main/weather-uploader.yaml
   homeassistant:
@@ -97,6 +98,9 @@ blueprint:
     idokep:
       name: Időkép
       icon: mdi:weather-partly-cloudy
+      description: >-
+        [idokep.hu](https://www.idokep.hu) · Állomás regisztrálása:
+        [haladó szintű regisztráció](https://www.idokep.hu/regisztracio?szint=halado)
       collapsed: true
       input:
         idokep_enabled:
@@ -154,6 +158,10 @@ blueprint:
     metnet:
       name: Metnet
       icon: mdi:weather-cloudy-arrow-right
+      description: >-
+        [metnet.hu](https://www.metnet.hu) · Az állomásazonosítót és a kulcsot az
+        állomásod beállításainál, a *Weather Underground protokollal küldő
+        állomás* résznél találod.
       collapsed: true
       input:
         metnet_enabled:
@@ -181,6 +189,10 @@ blueprint:
     wunderground:
       name: Weather Underground
       icon: mdi:earth
+      description: >-
+        [wunderground.com](https://www.wunderground.com) · A Station ID-t és a
+        Station Key-t a [My Devices](https://www.wunderground.com/member/devices)
+        oldalon találod.
       collapsed: true
       input:
         wu_enabled:
@@ -199,6 +211,36 @@ blueprint:
           description: >-
             Az állomáshoz tartozó kulcs (Station Key), a Weather Underground
             fiókodban a *My Devices* oldalon találod.
+          default: ""
+          selector:
+            text:
+              type: password
+
+    metesz:
+      name: MET-ÉSZ (HungaroMet)
+      icon: mdi:radar
+      description: >-
+        [metesz.met.hu](https://metesz.met.hu) · A HungaroMet önkéntes
+        megfigyelőhálózata. A PWS azonosítót és a fix jelszót a MET-ÉSZ-ben az
+        állomásod **helyszínére** belépve, a *Beállítás* lapon találod
+        ([útmutató](https://docs.google.com/document/d/1tJW0m9SudvlGxoeCq2PnnRyquk1i1p9iz93StwaQMNY)).
+      collapsed: true
+      input:
+        metesz_enabled:
+          name: Feltöltés a MET-ÉSZ-be
+          description: Kapcsold be, különben a lenti adatok kitöltése után sem megy fel adat.
+          default: false
+          selector:
+            boolean:
+        metesz_pws_id:
+          name: PWS azonosító
+          description: A MET-ÉSZ Beállítás lapján látható PWS azonosító (pl. 4.29).
+          default: ""
+          selector:
+            text:
+        metesz_password:
+          name: Fix jelszó
+          description: A MET-ÉSZ Beállítás lapján megadott fix jelszó.
           default: ""
           selector:
             text:
@@ -317,7 +359,7 @@ blueprint:
       icon: mdi:weather-pouring
       description: >-
         Időkép formátumban az 1 órás, a 24 órás és az összes csapadék megy fel
-        mm-ben. WU formátumban (Metnet, Weather Underground, és az Időkép WU
+        mm-ben. WU formátumban (Metnet, MET-ÉSZ, Weather Underground, és az Időkép WU
         formátuma) az 1 órás és a napi, éjfél óta mért csapadék megy fel,
         inch-ben.
       collapsed: true
@@ -345,7 +387,7 @@ blueprint:
           name: Napi csapadék – éjfél óta (Opcionális, WU formátum)
           description: >-
             Az éjfél óta hullott csapadék mm-ben. WU formátum: `dailyrainin`
-            (inch). A Metnet és a Weather Underground ezt használja napi
+            (inch). A Metnet, a MET-ÉSZ és a Weather Underground ezt használja napi
             csapadékként.
           default: ""
           selector:
@@ -395,6 +437,9 @@ variables:
   metnet_on: !input metnet_enabled
   metnet_id: !input metnet_station_id
   metnet_key: !input metnet_key
+  metesz_on: !input metesz_enabled
+  metesz_id: !input metesz_pws_id
+  metesz_pass: !input metesz_password
   wu_on: !input wu_enabled
   wu_id: !input wu_station_id
   wu_key: !input wu_key
@@ -418,6 +463,9 @@ variables:
   metnet_kesz: >-
     {{ metnet_on | bool(false) and metnet_id not in ['', none]
        and metnet_key not in ['', none] }}
+  metesz_kesz: >-
+    {{ metesz_on | bool(false) and metesz_id not in ['', none]
+       and metesz_pass not in ['', none] }}
   wu_kesz: >-
     {{ wu_on | bool(false) and wu_id not in ['', none]
        and wu_key not in ['', none] }}
@@ -430,7 +478,7 @@ conditions:
   # Legalább egy cél legyen kész, és a hőmérséklet-szenzor adjon számot.
   - condition: template
     value_template: >-
-      {{ (idokep_kesz or metnet_kesz or wu_kesz)
+      {{ (idokep_kesz or metnet_kesz or metesz_kesz or wu_kesz)
          and temp_sensor not in ['', none] and is_number(states(temp_sensor)) }}
 
 actions:
@@ -463,7 +511,7 @@ actions:
         {%- endif -%}
 
       # Közös Weather Underground mérési rész (ID és jelszó nélkül).
-      # Ezt kapja a Metnet, a Weather Underground és az Időkép WU formátuma.
+      # Ezt kapja a Metnet, a MET-ÉSZ, a Weather Underground és az Időkép WU formátuma.
       wu_adatok: >-
         {%- set mph_szorzo = {
           'm/s': 2.2369363, 'km/h': 0.6213712, 'kph': 0.6213712,
@@ -604,7 +652,7 @@ actions:
           - action: rest_command.weather_upload
             continue_on_error: true
             data:
-              user_agent: "HA-Weather-Uploader/3.0"
+              user_agent: "HA-Weather-Uploader/3.1"
               url: >-
                 {{ 'https://www.metnet.hu/api/wu/updateweatherstation.php'
                    ~ '?ID=' ~ (metnet_id | string | trim | urlencode)
@@ -613,12 +661,28 @@ actions:
 
       - if:
           - condition: template
+            value_template: "{{ metesz_kesz }}"
+        then:
+          # A MET-ÉSZ a dateutc mezőben pontos UTC időt vár, a "now" helyett.
+          - action: rest_command.weather_upload
+            continue_on_error: true
+            data:
+              user_agent: "HA-Weather-Uploader/3.1"
+              url: >-
+                {{ 'https://metesz.met.hu/pws'
+                   ~ '?ID=' ~ (metesz_id | string | trim | urlencode)
+                   ~ '&PASSWORD=' ~ (metesz_pass | string | urlencode)
+                   ~ wu_adatok | replace('&dateutc=now', '&dateutc='
+                       ~ (utcnow().strftime('%Y-%m-%d+%H:%M:%S') | replace(':', '%3A'))) }}
+
+      - if:
+          - condition: template
             value_template: "{{ wu_kesz }}"
         then:
           - action: rest_command.weather_upload
             continue_on_error: true
             data:
-              user_agent: "HA-Weather-Uploader/3.0"
+              user_agent: "HA-Weather-Uploader/3.1"
               url: >-
                 {{ 'https://weatherstation.wunderground.com/weatherstation/updateweatherstation.php'
                    ~ '?ID=' ~ (wu_id | string | trim | urlencode)
